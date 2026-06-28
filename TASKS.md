@@ -11,12 +11,12 @@ Master task list for building the MVP. Reference docs: [`architecture.MD`](archi
 | Status | Count |
 |---|---|
 | Total tasks | 46 |
-| Done `[x]` | 16 |
+| Done `[x]` | 19 |
 | In progress `[~]` | 0 |
-| Not started `[ ]` | 30 |
-| **Batches complete** | **2 / 10** |
+| Not started `[ ]` | 27 |
+| **Batches complete** | **3 / 10** (Batch 10 partial: 1/4) |
 
-**Last updated:** 2026-06-28 (Batch 2 complete)
+**Last updated:** 2026-06-28 (T-043, T-039, T-040 complete)
 
 ---
 
@@ -33,9 +33,9 @@ Recommended execution order. Run batches sequentially — each batch depends on 
 | **5** | Orders | T-025 – T-029 | 0 / 5 | `[ ]` Not started | Batch 4 |
 | **6** | Reservations | T-030 – T-033 | 0 / 4 | `[ ]` Not started | Batch 5 |
 | **7** | Billing | T-034 – T-038 | 0 / 5 | `[ ]` Not started | Batch 5 |
-| **8** | Staff | T-039 – T-040 | 0 / 2 | `[ ]` Not started | Batch 2 |
+| **8** | Staff | T-039 – T-040 | 2 / 2 | `[x]` **Done** | Batch 2 |
 | **9** | Dashboard overview | T-041 – T-042 | 0 / 2 | `[ ]` Not started | Batches 5, 6, 7 |
-| **10** | Home + polish | T-043 – T-046 | 0 / 4 | `[ ]` Not started | Batch 9 |
+| **10** | Home + polish | T-043 – T-046 | 1 / 4 | `[~]` In progress | Batch 9 |
 
 **Say to execute:** `Execute Batch 1` … `Execute Batch 10` (or the task range for that batch).
 
@@ -101,14 +101,14 @@ Recommended execution order. Run batches sequentially — each batch depends on 
 | **Goal** | Bills API with tax calc; admin billing page; customer bill view |
 | **Milestone** | Serve → bill → pay → table available (core dine-in loop complete) |
 
-#### Batch 8 — Staff `[ ]`
+#### Batch 8 — Staff `[x]` Done
 
 | | |
 |---|---|
 | **Tasks** | T-039, T-040 |
 | **Goal** | Staff CRUD API; admin staff page |
 | **Milestone** | Admin can manage staff records |
-| **Note** | Can run after Batch 2; sequenced before Batch 9 in recommended order |
+| **Completed** | 2026-06-28 |
 
 #### Batch 9 — Dashboard overview `[ ]`
 
@@ -199,11 +199,11 @@ flowchart TD
 | T-036 | Bills indexes on startup | `[ ]` |
 | T-037 | Admin billing page | `[ ]` |
 | T-038 | Customer bill view page | `[ ]` |
-| T-039 | Staff API | `[ ]` |
-| T-040 | Admin staff page | `[ ]` |
+| T-039 | Staff API | `[x]` |
+| T-040 | Admin staff page | `[x]` |
 | T-041 | Dashboard stats API | `[ ]` |
 | T-042 | Dashboard overview page | `[ ]` |
-| T-043 | Customer home page | `[ ]` |
+| T-043 | Customer home page | `[x]` |
 | T-044 | Loading + error states | `[ ]` |
 | T-045 | Mobile responsive pass | `[ ]` |
 | T-046 | End-to-end smoke test checklist | `[ ]` |
@@ -871,34 +871,34 @@ flowchart TD
 
 ### US-A08: As admin, I want to manage staff records
 
-#### T-039 — Staff API `[ ]`
+#### T-039 — Staff API `[x]`
 
 **Sub-tasks**
-- [ ] `GET /api/staff` — admin, list all
-- [ ] `POST /api/staff` — admin, create (name, email, role, active)
-- [ ] `PATCH /api/staff/:id` — admin, update fields
-- [ ] Enforce unique email; roles: admin, manager, waiter
+- [x] `GET /api/staff` — admin, list all
+- [x] `POST /api/staff` — admin, create (name, email, role, active)
+- [x] `PATCH /api/staff/:id` — admin, update fields
+- [x] Enforce unique email; roles: admin, manager, waiter
 
 **Acceptance criteria**
-- [ ] CRUD works for admin user
-- [ ] Duplicate email returns 400
-- [ ] Deactivate via `active: false` (no hard delete required)
+- [x] CRUD works for admin user
+- [x] Duplicate email returns 400
+- [x] Deactivate via `active: false` (no hard delete required)
 
 **Depends on:** T-013
 
 ---
 
-#### T-040 — Admin staff page `[ ]`
+#### T-040 — Admin staff page `[x]`
 
 **Sub-tasks**
-- [ ] Build `/dashboard/staff`
-- [ ] Create `components/dashboard/StaffForm.js` for add/edit
-- [ ] Show role badge and active status
+- [x] Build `/dashboard/staff`
+- [x] Create `components/dashboard/StaffForm.js` for add/edit
+- [x] Show role badge and active status
 
 **Acceptance criteria**
-- [ ] Admin can add, edit, deactivate staff
-- [ ] Role displayed as badge (admin / manager / waiter)
-- [ ] Non-admin users blocked (when role checks added later)
+- [x] Admin can add, edit, deactivate staff
+- [x] Role displayed as badge (admin / manager / waiter)
+- [x] Non-admin users blocked (when role checks added later)
 
 **Depends on:** T-016, T-039
 
@@ -939,17 +939,17 @@ flowchart TD
 
 ### US-C05: As a customer, I want a welcoming home page that guides me to key actions
 
-#### T-043 — Customer home page `[ ]`
+#### T-043 — Customer home page `[x]`
 
 **Sub-tasks**
-- [ ] Build `/` with restaurant name, welcome copy
-- [ ] Action cards linking to Menu, Order, Reserve
+- [x] Build `/` with restaurant name, welcome copy
+- [x] Action cards linking to Menu, Order, Reserve
 - [ ] Optional: fetch and show 3 featured available menu items
 
 **Acceptance criteria**
-- [ ] Clear calls-to-action for all three customer flows
-- [ ] Consistent with public layout navbar
-- [ ] Mobile-friendly card grid
+- [x] Clear calls-to-action for all three customer flows
+- [x] Consistent with public layout navbar
+- [x] Mobile-friendly card grid
 
 **Depends on:** T-015, T-020 (optional featured items)
 

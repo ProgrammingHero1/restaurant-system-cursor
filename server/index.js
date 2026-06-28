@@ -2,12 +2,14 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.DB_NAME || 'restaurant';
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
+
+const STAFF_ROLES = ['admin', 'manager', 'waiter'];
 
 const app = express();
 
@@ -42,6 +44,20 @@ async function getCollection(name) {
     throw new Error('Database not connected');
   }
   return client.db(DB_NAME).collection(name);
+}
+
+function toObjectId(id) {
+  if (!ObjectId.isValid(id)) return null;
+  return new ObjectId(id);
+}
+
+async function ensureIndexes() {
+  try {
+    const staff = await getCollection('staff');
+    await staff.createIndex({ email: 1 }, { unique: true });
+  } catch (err) {
+    console.warn('Index setup warning:', err.message);
+  }
 }
 
 async function requireAdmin(req, res, next) {
@@ -138,8 +154,109 @@ app.post('/api/admin/auth-check', requireAdmin, (req, res) => {
   res.json({ ok: true, user: { email: req.user.email, name: req.user.name } });
 });
 
+app.get('/api/staff', requireAdmin, async (req, res) => {
+  try {
+    const col = await getCollection('staff');
+    const list = await col.find({}).sort({ createdAt: -1 }).toArray();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch staff' });
+  }
+});
+
+app.post('/api/staff', requireAdmin, async (req, res) => {
+  const { name, email, role, active } = req.body;
+
+  if (!name || !String(name).trim()) {
+    return res.status(400).json({ error: 'Name is required' });
+  }
+  if (!email || !String(email).trim()) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+  if (role && !STAFF_ROLES.includes(role)) {
+    return res.status(400).json({ error: 'Invalid role' });
+  }
+
+  try {
+    const col = await getCollection('staff');
+    const doc = {
+      name: String(name).trim(),
+      email: String(email).trim().toLowerCase(),
+      role: role || 'waiter',
+      active: active !== false,
+      createdAt: new Date(),
+    };
+    const result = await col.insertOne(doc);
+    res.status(201).json({ ...doc, _id: result.insertedId });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+    res.status(500).json({ error: 'Failed to create staff member' });
+  }
+});
+
+app.patch('/api/staff/:id', requireAdmin, async (req, res) => {
+  const objectId = toObjectId(req.params.id);
+  if (!objectId) {
+    return res.status(400).json({ error: 'Invalid staff id' });
+  }
+
+  const updates = {};
+  const { name, email, role, active } = req.body;
+
+  if (name !== undefined) {
+    if (!String(name).trim()) {
+      return res.status(400).json({ error: 'Name cannot be empty' });
+    }
+    updates.name = String(name).trim();
+  }
+  if (email !== undefined) {
+    if (!String(email).trim()) {
+      return res.status(400).json({ error: 'Email cannot be empty' });
+    }
+    updates.email = String(email).trim().toLowerCase();
+  }
+  if (role !== undefined) {
+    if (!STAFF_ROLES.includes(role)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+    updates.role = role;
+  }
+  if (active !== undefined) {
+    updates.active = Boolean(active);
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: 'No valid fields to update' });
+  }
+
+  updates.updatedAt = new Date();
+
+  try {
+    const col = await getCollection('staff');
+    const result = await col.findOneAndUpdate(
+      { _id: objectId },
+      { $set: updates },
+      { returnDocument: 'after' }
+    );
+
+    if (!result) {
+      return res.status(404).json({ error: 'Staff member not found' });
+    }
+
+    res.json(result);
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+    res.status(500).json({ error: 'Failed to update staff member' });
+  }
+});
+
 async function start() {
   await connectDb();
+  await ensureIndexes();
 
   app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
