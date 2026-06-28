@@ -8,13 +8,41 @@ class ApiError extends Error {
   }
 }
 
-async function request(path, { method = "GET", body, headers = {} } = {}) {
+async function getAuthHeaders() {
+  if (typeof window === "undefined") {
+    try {
+      const { headers } = await import("next/headers");
+      const h = await headers();
+      const cookie = h.get("cookie");
+      return cookie ? { cookie } : {};
+    } catch {
+      return {};
+    }
+  }
+
+  try {
+    const { authClient } = await import("./auth-client");
+    const session = await authClient.getSession();
+    const token = session?.data?.session?.token;
+    if (token) {
+      return { cookie: `better-auth.session_token=${token}` };
+    }
+  } catch {
+    // ignore — unauthenticated request
+  }
+  return {};
+}
+
+async function request(path, { method = "GET", body, headers = {}, auth = false } = {}) {
   const url = `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+
+  const authHeaders = auth ? await getAuthHeaders() : {};
 
   const config = {
     method,
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders,
       ...headers,
     },
   };
@@ -53,4 +81,4 @@ export const api = {
   delete: (path, options) => request(path, { ...options, method: "DELETE" }),
 };
 
-export { ApiError, API_BASE };
+export { ApiError, API_BASE, getAuthHeaders };

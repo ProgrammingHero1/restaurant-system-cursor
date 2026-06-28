@@ -2,7 +2,7 @@
 
 Master task list for building the MVP. Reference docs: [`architecture.MD`](architecture.MD), [`features.MD`](features.MD), [`.cursorrules`](.cursorrules).
 
-**How to use:** Ask the agent to **"Execute T-017"** (or a range like **"Execute T-017 through T-020"**). The agent will implement the work and update this file — marking tasks `[~]` while in progress and `[x]` when complete.
+**How to use:** Ask the agent to **"Execute Batch 2"** or **"Execute T-017 through T-020"**. The agent will implement the work and update this file — marking tasks and batch progress as work proceeds.
 
 ---
 
@@ -11,13 +11,153 @@ Master task list for building the MVP. Reference docs: [`architecture.MD`](archi
 | Status | Count |
 |---|---|
 | Total tasks | 46 |
-| Done `[x]` | 7 |
+| Done `[x]` | 16 |
 | In progress `[~]` | 0 |
-| Not started `[ ]` | 39 |
+| Not started `[ ]` | 30 |
+| **Batches complete** | **2 / 10** |
 
-**Last updated:** 2026-06-28 (Batch 1 complete)
+**Last updated:** 2026-06-28 (Batch 2 complete)
 
-### Quick reference
+---
+
+## Batch Progress
+
+Recommended execution order. Run batches sequentially — each batch depends on the one before it unless noted.
+
+| Batch | Name | Tasks | Progress | Status | Prerequisite |
+|---|---|---|---|---|---|
+| **1** | Foundation | T-001 – T-007 | 7 / 7 | `[x]` **Done** | — |
+| **2** | Auth + UI shells | T-008 – T-016 | 9 / 9 | `[x]` **Done** | Batch 1 |
+| **3** | Menu | T-017 – T-020 | 0 / 4 | `[ ]` Not started | Batch 2 |
+| **4** | Tables | T-021 – T-024 | 0 / 4 | `[ ]` Not started | Batch 3 |
+| **5** | Orders | T-025 – T-029 | 0 / 5 | `[ ]` Not started | Batch 4 |
+| **6** | Reservations | T-030 – T-033 | 0 / 4 | `[ ]` Not started | Batch 5 |
+| **7** | Billing | T-034 – T-038 | 0 / 5 | `[ ]` Not started | Batch 5 |
+| **8** | Staff | T-039 – T-040 | 0 / 2 | `[ ]` Not started | Batch 2 |
+| **9** | Dashboard overview | T-041 – T-042 | 0 / 2 | `[ ]` Not started | Batches 5, 6, 7 |
+| **10** | Home + polish | T-043 – T-046 | 0 / 4 | `[ ]` Not started | Batch 9 |
+
+**Say to execute:** `Execute Batch 1` … `Execute Batch 10` (or the task range for that batch).
+
+### Batch details
+
+#### Batch 1 — Foundation `[x]` Done
+
+| | |
+|---|---|
+| **Tasks** | T-001, T-002, T-003, T-004, T-005, T-006, T-007 |
+| **Goal** | Running Express server + MongoDB health check; Next.js client with all route placeholders, API client, constants, theme |
+| **Milestone** | `npm start` (server) + `npm run dev` (client) both work; all routes resolve |
+| **Completed** | 2026-06-28 |
+
+| **Completed** | 2026-06-28 |
+
+#### Batch 2 — Auth + UI shells `[x]` Done
+
+| | |
+|---|---|
+| **Tasks** | T-008, T-009, T-010, T-011, T-012, T-013, T-014, T-015, T-016 |
+| **Goal** | Better Auth login; protected dashboard layout; Express admin middleware; public navbar; admin sidebar |
+| **Milestone** | Staff can log in; `/dashboard/*` requires auth; shared UI components ready |
+| **Completed** | 2026-06-28 |
+
+#### Batch 3 — Menu `[ ]`
+
+| | |
+|---|---|
+| **Tasks** | T-017, T-018, T-019, T-020 |
+| **Goal** | Menu CRUD API + indexes; admin menu page; customer menu browser |
+| **Milestone** | First full vertical slice — browse and manage menu items |
+
+#### Batch 4 — Tables `[ ]`
+
+| | |
+|---|---|
+| **Tasks** | T-021, T-022, T-023, T-024 |
+| **Goal** | Tables API + indexes; admin floor view; TablePicker component |
+| **Milestone** | Available tables visible for order flow |
+
+#### Batch 5 — Orders `[ ]`
+
+| | |
+|---|---|
+| **Tasks** | T-025, T-026, T-027, T-028, T-029 |
+| **Goal** | Orders API with status transitions; admin order list; customer order page |
+| **Milestone** | Customer places order; staff updates status; table becomes occupied |
+
+#### Batch 6 — Reservations `[ ]`
+
+| | |
+|---|---|
+| **Tasks** | T-030, T-031, T-032, T-033 |
+| **Goal** | Reservations API with confirm/cancel/seat logic; admin + customer pages |
+| **Milestone** | Book table online; admin confirms and assigns table |
+
+#### Batch 7 — Billing `[ ]`
+
+| | |
+|---|---|
+| **Tasks** | T-034, T-035, T-036, T-037, T-038 |
+| **Goal** | Bills API with tax calc; admin billing page; customer bill view |
+| **Milestone** | Serve → bill → pay → table available (core dine-in loop complete) |
+
+#### Batch 8 — Staff `[ ]`
+
+| | |
+|---|---|
+| **Tasks** | T-039, T-040 |
+| **Goal** | Staff CRUD API; admin staff page |
+| **Milestone** | Admin can manage staff records |
+| **Note** | Can run after Batch 2; sequenced before Batch 9 in recommended order |
+
+#### Batch 9 — Dashboard overview `[ ]`
+
+| | |
+|---|---|
+| **Tasks** | T-041, T-042 |
+| **Goal** | Stats API; dashboard overview with stat cards and quick lists |
+| **Milestone** | `/dashboard` shows live counts and revenue |
+| **Requires** | Orders, reservations, and billing data (Batches 5–7) |
+
+#### Batch 10 — Home + polish `[ ]`
+
+| | |
+|---|---|
+| **Tasks** | T-043, T-044, T-045, T-046 |
+| **Goal** | Customer home page; loading/error states; mobile pass; smoke test checklist |
+| **Milestone** | MVP complete and manually verified (S-1 through S-10) |
+
+### Batch dependency graph
+
+```mermaid
+flowchart TD
+  B1["Batch 1 Foundation"]
+  B2["Batch 2 Auth + shells"]
+  B3["Batch 3 Menu"]
+  B4["Batch 4 Tables"]
+  B5["Batch 5 Orders"]
+  B6["Batch 6 Reservations"]
+  B7["Batch 7 Billing"]
+  B8["Batch 8 Staff"]
+  B9["Batch 9 Dashboard"]
+  B10["Batch 10 Polish"]
+
+  B1 --> B2 --> B3 --> B4 --> B5
+  B5 --> B7
+  B5 --> B6
+  B2 --> B8
+  B5 --> B9
+  B6 --> B9
+  B7 --> B9
+  B8 --> B9
+  B9 --> B10
+```
+
+**Recommended next step:** `Execute Batch 3` (T-017 through T-020)
+
+---
+
+### Quick reference (all tasks)
 
 | ID | Task | Status |
 |---|---|---|
@@ -28,15 +168,15 @@ Master task list for building the MVP. Reference docs: [`architecture.MD`](archi
 | T-005 | API client (`lib/api.js`) | `[x]` |
 | T-006 | Shared constants (`lib/constants.js`) | `[x]` |
 | T-007 | Root layout + global styles + theme | `[x]` |
-| T-008 | Better Auth server config | `[ ]` |
-| T-009 | Better Auth API route handler | `[ ]` |
-| T-010 | Better Auth client | `[ ]` |
-| T-011 | Login page | `[ ]` |
-| T-012 | Dashboard layout + auth guard | `[ ]` |
-| T-013 | Express admin auth middleware | `[ ]` |
-| T-014 | Shared UI components | `[ ]` |
-| T-015 | Public layout + navbar | `[ ]` |
-| T-016 | Dashboard sidebar + shell | `[ ]` |
+| T-008 | Better Auth server config | `[x]` |
+| T-009 | Better Auth API route handler | `[x]` |
+| T-010 | Better Auth client | `[x]` |
+| T-011 | Login page | `[x]` |
+| T-012 | Dashboard layout + auth guard | `[x]` |
+| T-013 | Express admin auth middleware | `[x]` |
+| T-014 | Shared UI components | `[x]` |
+| T-015 | Public layout + navbar | `[x]` |
+| T-016 | Dashboard sidebar + shell | `[x]` |
 | T-017 | Menu API (CRUD) | `[ ]` |
 | T-018 | Menu indexes on startup | `[ ]` |
 | T-019 | Admin menu page | `[ ]` |
@@ -198,92 +338,92 @@ Master task list for building the MVP. Reference docs: [`architecture.MD`](archi
 
 ### US-A01: As staff, I want to log in so I can access the admin dashboard
 
-#### T-008 — Better Auth server config `[ ]`
+#### T-008 — Better Auth server config `[x]`
 
 **Sub-tasks**
-- [ ] Install Better Auth in client project
-- [ ] Create `lib/auth.js` with email/password provider
-- [ ] Configure session settings for Next.js App Router
+- [x] Install Better Auth in client project
+- [x] Create `lib/auth.js` with email/password provider
+- [x] Configure session settings for Next.js App Router
 
 **Acceptance criteria**
-- [ ] Auth instance exports from `lib/auth.js`
-- [ ] Configuration is JavaScript only
-- [ ] `.env.local` variables documented in comments (user must confirm before writing `.env`)
+- [x] Auth instance exports from `lib/auth.js`
+- [x] Configuration is JavaScript only
+- [x] `.env.local` variables documented in comments (user must confirm before writing `.env`)
 
 **Depends on:** T-004
 
 ---
 
-#### T-009 — Better Auth API route handler `[ ]`
+#### T-009 — Better Auth API route handler `[x]`
 
 **Sub-tasks**
-- [ ] Create `app/api/auth/[...all]/route.js` wired to Better Auth handler
+- [x] Create `app/api/auth/[...all]/route.js` wired to Better Auth handler
 
 **Acceptance criteria**
-- [ ] Auth endpoints respond at `/api/auth/*`
-- [ ] Sign-up/sign-in routes reachable (even if sign-up is disabled for production)
+- [x] Auth endpoints respond at `/api/auth/*`
+- [x] Sign-up/sign-in routes reachable (even if sign-up is disabled for production)
 
 **Depends on:** T-008
 
 ---
 
-#### T-010 — Better Auth client `[ ]`
+#### T-010 — Better Auth client `[x]`
 
 **Sub-tasks**
-- [ ] Create `lib/auth-client.js` for client components
-- [ ] Export signIn, signOut, useSession (or equivalent)
+- [x] Create `lib/auth-client.js` for client components
+- [x] Export signIn, signOut, useSession (or equivalent)
 
 **Acceptance criteria**
-- [ ] Client components can call signIn/signOut without errors
-- [ ] Session state available for conditional UI
+- [x] Client components can call signIn/signOut without errors
+- [x] Session state available for conditional UI
 
 **Depends on:** T-008, T-009
 
 ---
 
-#### T-011 — Login page `[ ]`
+#### T-011 — Login page `[x]`
 
 **Sub-tasks**
-- [ ] Build `/login` with email + password form (DaisyUI `input`, `btn`)
-- [ ] Redirect to `/dashboard` on successful login
-- [ ] Show error alert on failed login
+- [x] Build `/login` with email + password form (DaisyUI `input`, `btn`)
+- [x] Redirect to `/dashboard` on successful login
+- [x] Show error alert on failed login
 
 **Acceptance criteria**
-- [ ] Valid credentials redirect to `/dashboard`
-- [ ] Invalid credentials show DaisyUI `alert alert-error`
-- [ ] Page is accessible without prior auth
+- [x] Valid credentials redirect to `/dashboard`
+- [x] Invalid credentials show DaisyUI `alert alert-error`
+- [x] Page is accessible without prior auth
 
 **Depends on:** T-010, T-007
 
 ---
 
-#### T-012 — Dashboard layout + auth guard `[ ]`
+#### T-012 — Dashboard layout + auth guard `[x]`
 
 **Sub-tasks**
-- [ ] Create `app/(dashboard)/layout.js` checking session server-side
-- [ ] Redirect unauthenticated users to `/login`
-- [ ] Render children inside dashboard shell placeholder
+- [x] Create `app/(dashboard)/layout.js` checking session server-side
+- [x] Redirect unauthenticated users to `/login`
+- [x] Render children inside dashboard shell placeholder
 
 **Acceptance criteria**
-- [ ] Visiting `/dashboard/*` without session redirects to `/login`
-- [ ] Authenticated users see dashboard content
-- [ ] Logout clears session (wired in T-016)
+- [x] Visiting `/dashboard/*` without session redirects to `/login`
+- [x] Authenticated users see dashboard content
+- [x] Logout clears session (wired in T-016)
 
 **Depends on:** T-011
 
 ---
 
-#### T-013 — Express admin auth middleware `[ ]`
+#### T-013 — Express admin auth middleware `[x]`
 
 **Sub-tasks**
-- [ ] Add middleware in `server/index.js` to verify admin session on protected routes
-- [ ] Return 401 for unauthenticated admin mutations
-- [ ] Allow public routes (menu read, orders POST, etc.) without auth
+- [x] Add middleware in `server/index.js` to verify admin session on protected routes
+- [x] Return 401 for unauthenticated admin mutations
+- [x] Allow public routes (menu read, orders POST, etc.) without auth
 
 **Acceptance criteria**
-- [ ] Protected POST/PATCH/DELETE return 401 without valid session
-- [ ] Public GET endpoints remain accessible
-- [ ] Auth check lives in `index.js` (no separate middleware files required, inline function is fine)
+- [x] Protected POST/PATCH/DELETE return 401 without valid session
+- [x] Public GET endpoints remain accessible
+- [x] Auth check lives in `index.js` (no separate middleware files required, inline function is fine)
 
 **Depends on:** T-002, T-009
 
@@ -293,51 +433,51 @@ Master task list for building the MVP. Reference docs: [`architecture.MD`](archi
 
 ### US-00: As a user, I want consistent navigation and layout across the app
 
-#### T-014 — Shared UI components `[ ]`
+#### T-014 — Shared UI components `[x]`
 
 **Sub-tasks**
-- [ ] `components/ui/PageHeader.js`
-- [ ] `components/ui/DataTable.js`
-- [ ] `components/ui/StatusBadge.js`
-- [ ] `components/ui/LoadingSpinner.js`
-- [ ] `components/ui/EmptyState.js`
+- [x] `components/ui/PageHeader.js`
+- [x] `components/ui/DataTable.js`
+- [x] `components/ui/StatusBadge.js`
+- [x] `components/ui/LoadingSpinner.js`
+- [x] `components/ui/EmptyState.js`
 
 **Acceptance criteria**
-- [ ] Components use DaisyUI classes only (no custom CSS files)
-- [ ] `StatusBadge` supports order, table, reservation, and payment statuses
-- [ ] `DataTable` supports headers, rows, and `overflow-x-auto` for mobile
+- [x] Components use DaisyUI classes only (no custom CSS files)
+- [x] `StatusBadge` supports order, table, reservation, and payment statuses
+- [x] `DataTable` supports headers, rows, and `overflow-x-auto` for mobile
 
 **Depends on:** T-007
 
 ---
 
-#### T-015 — Public layout + navbar `[ ]`
+#### T-015 — Public layout + navbar `[x]`
 
 **Sub-tasks**
-- [ ] Create `app/(public)/layout.js`
-- [ ] Create `components/public/PublicNavbar.js` with links: Home, Menu, Order, Reserve
-- [ ] Add simple footer
+- [x] Create `app/(public)/layout.js`
+- [x] Create `components/public/PublicNavbar.js` with links: Home, Menu, Order, Reserve
+- [x] Add simple footer
 
 **Acceptance criteria**
-- [ ] All public pages share navbar and footer
-- [ ] Navbar links route correctly
-- [ ] Layout is mobile-friendly (collapsible or stacked links)
+- [x] All public pages share navbar and footer
+- [x] Navbar links route correctly
+- [x] Layout is mobile-friendly (collapsible or stacked links)
 
 **Depends on:** T-004, T-014
 
 ---
 
-#### T-016 — Dashboard sidebar + shell `[ ]`
+#### T-016 — Dashboard sidebar + shell `[x]`
 
 **Sub-tasks**
-- [ ] Create `components/dashboard/Sidebar.js` with nav: Dashboard, Menu, Tables, Orders, Reservations, Billing, Staff
-- [ ] Create `components/dashboard/DashboardNavbar.js` with logout button
-- [ ] Wire sidebar into `(dashboard)/layout.js`
+- [x] Create `components/dashboard/Sidebar.js` with nav: Dashboard, Menu, Tables, Orders, Reservations, Billing, Staff
+- [x] Create `components/dashboard/DashboardNavbar.js` with logout button
+- [x] Wire sidebar into `(dashboard)/layout.js`
 
 **Acceptance criteria**
-- [ ] All dashboard routes accessible from sidebar
-- [ ] Active route highlighted
-- [ ] Logout returns user to `/login`
+- [x] All dashboard routes accessible from sidebar
+- [x] Active route highlighted
+- [x] Logout returns user to `/login`
 
 **Depends on:** T-012, T-014
 
@@ -882,7 +1022,9 @@ flowchart TD
   T041[T-041 Stats API] --> T042[T-042 Dashboard]
 ```
 
-**Recommended execution order:** T-001 → T-007 → T-008 → T-013 → T-014 → T-016 → T-017 → T-020 → T-021 → T-025 → T-029 → T-030 → T-033 → T-034 → T-038 → T-039 → T-041 → T-043 → T-044 → T-046
+**Recommended execution order:** Batch 1 → Batch 2 → Batch 3 → Batch 4 → Batch 5 → Batch 6 → Batch 7 → Batch 8 → Batch 9 → Batch 10
+
+See **Batch Progress** at the top of this file for task ranges and current status.
 
 ---
 
@@ -924,11 +1066,15 @@ flowchart TD
 
 ## Agent instructions (for task execution)
 
-When the user says **"Execute T-0XX"**:
+When the user says **"Execute Batch N"** or **"Execute T-0XX"** (or a range):
 
-1. Mark T-0XX as `[~]` in this file (Progress Summary + task heading).
-2. Read dependencies — complete them first if still `[ ]`.
-3. Implement per acceptance criteria and [`.cursorrules`](.cursorrules).
-4. Mark all sub-task checkboxes and acceptance criteria `[x]` when met.
-5. Mark T-0XX as `[x]`; update Progress Summary counts and **Last updated** date.
-6. If blocked, leave `[~]`, add a row to **Blockers & notes**.
+1. Mark the batch as `[~]` **In progress** in **Batch Progress** (if executing a full batch).
+2. Mark each T-0XX as `[~]` in this file (Progress Summary + task heading).
+3. Read dependencies — complete prerequisite batches/tasks first if still `[ ]`.
+4. Implement per acceptance criteria and [`.cursorrules`](.cursorrules).
+5. Mark all sub-task checkboxes and acceptance criteria `[x]` when met.
+6. Mark each T-0XX as `[x]`; update **Progress Summary** counts.
+7. When all tasks in a batch are `[x]`, update **Batch Progress**: set Progress column (e.g. `9 / 9`), Status to `[x]` **Done**, and add **Completed** date on the batch detail.
+8. Update **Batches complete** count (e.g. `2 / 10`) and **Last updated** date.
+9. Set **Recommended next step** to the next incomplete batch.
+10. If blocked, leave batch/task as `[~]`, add a row to **Blockers & notes**.

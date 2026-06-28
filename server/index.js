@@ -44,6 +44,63 @@ async function getCollection(name) {
   return client.db(DB_NAME).collection(name);
 }
 
+async function requireAdmin(req, res, next) {
+  const cookieHeader = req.headers.cookie;
+
+  if (!cookieHeader) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const sessionRes = await fetch(`${CLIENT_URL}/api/auth/get-session`, {
+      headers: { cookie: cookieHeader },
+    });
+
+    if (!sessionRes.ok) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const data = await sessionRes.json();
+
+    if (!data?.session?.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    req.user = data.session.user;
+    return next();
+  } catch (err) {
+    console.error('Auth verification failed:', err.message);
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+}
+
+function isPublicWriteRoute(req) {
+  if (req.method === 'POST' && req.path === '/api/orders') return true;
+  if (req.method === 'POST' && req.path === '/api/reservations') return true;
+  return false;
+}
+
+function isPublicReadRoute(req) {
+  if (req.method !== 'GET') return false;
+  if (req.path === '/api/health') return true;
+  if (req.path === '/api/menu-items') return true;
+  if (req.path === '/api/tables/available') return true;
+  if (/^\/api\/bills\/[^/]+$/.test(req.path)) return true;
+  return false;
+}
+
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api/')) return next();
+  if (req.path === '/api/health') return next();
+  if (isPublicReadRoute(req) || isPublicWriteRoute(req)) return next();
+
+  if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method)) {
+    return requireAdmin(req, res, next);
+  }
+
+  return next();
+});
+
 app.get('/api/health', async (req, res) => {
   if (!MONGODB_URI) {
     return res.status(503).json({
@@ -77,6 +134,10 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+app.post('/api/admin/auth-check', requireAdmin, (req, res) => {
+  res.json({ ok: true, user: { email: req.user.email, name: req.user.name } });
+});
+
 async function start() {
   await connectDb();
 
@@ -92,4 +153,4 @@ process.on('SIGINT', async () => {
 
 start();
 
-module.exports = { app, getCollection };
+module.exports = { app, getCollection, requireAdmin };
