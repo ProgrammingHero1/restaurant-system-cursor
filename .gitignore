@@ -1,0 +1,23 @@
+# Nested git from create-next-app — remove client/.git for a single monorepo
+client/.git/
+
+# Dependencies
+node_modules/
+
+# Environment (secrets)
+.env
+.env.local
+.env*.local
+
+# Next.js
+client/.next/
+client/out/
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/

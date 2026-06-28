@@ -1,0 +1,191 @@
+# Restaurant Management System — Cursor Rules
+
+## Project Overview
+
+This is a restaurant management system with a simple monolithic backend and a modern Next.js frontend. Keep changes focused, practical, and aligned with the stack below. Do not introduce TypeScript, Mongoose, or MVC layering on the backend.
+
+---
+
+## Tech Stack (Strict)
+
+### Backend (`/server`)
+- **Runtime**: Node.js
+- **Framework**: Express
+- **Database**: MongoDB via the **official `mongodb` driver only** — never use Mongoose
+- **Language**: JavaScript (`.js`) only — no TypeScript
+- **Architecture**: Single entry file — all API routes and logic live in `server/index.js`. Do not split into controllers, models, services, or MVC folders unless the user explicitly asks
+
+### Frontend (`/client`)
+- **Framework**: Next.js (App Router preferred)
+- **Language**: JavaScript (`.js`, `.jsx`) only — no TypeScript, no `.ts`/`.tsx` files
+- **Auth**: Better Auth
+- **Styling**: Tailwind CSS + DaisyUI
+- **UI goal**: Clean, responsive, professional restaurant admin UI — readable tables, clear forms, sensible spacing, and mobile-friendly layouts
+
+---
+
+## Repository Structure
+
+```
+restaurent-management/
+├── server/
+│   ├── index.js          # Single file: Express app, routes, DB helpers
+│   ├── package.json
+│   └── .env                # Never commit; ask user before editing
+├── client/
+│   ├── app/                # Next.js App Router pages
+│   ├── components/         # Reusable UI components
+│   ├── lib/                # Auth client, API helpers, utilities
+│   ├── package.json
+│   └── .env.local          # Never commit; ask user before editing
+└── .cursorrules
+```
+
+Keep `server/` and `client/` as separate Node projects with their own `package.json` files.
+
+---
+
+## Backend Rules (`server/index.js`)
+
+### Single-file pattern
+- Define Express app, middleware, MongoDB connection, and all routes in `index.js`
+- Use small inline helper functions in the same file when needed (e.g. `getDb`, `toObjectId`, `handleError`)
+- Prefer flat, readable route handlers over abstractions
+
+```javascript
+// ✅ GOOD — everything in index.js
+const { MongoClient, ObjectId } = require('mongodb');
+
+async function getCollection(name) {
+  const db = client.db(process.env.DB_NAME);
+  return db.collection(name);
+}
+
+app.get('/api/menu-items', async (req, res) => {
+  try {
+    const col = await getCollection('menuItems');
+    const items = await col.find({}).toArray();
+    res.json(items);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch menu items' });
+  }
+});
+```
+
+```javascript
+// ❌ BAD — do not create MVC structure
+// controllers/menuController.js
+// models/MenuItem.js (Mongoose)
+// routes/menuRoutes.js
+```
+
+### MongoDB conventions
+- Use `MongoClient` with connection string from `process.env.MONGODB_URI`
+- Collection names: camelCase plural (`menuItems`, `orders`, `tables`, `staff`, `reservations`)
+- Store `_id` as ObjectId; validate IDs before queries
+- Use plain JavaScript objects — no schemas or ODM
+- Index frequently queried fields when adding new features
+
+### API conventions
+- Base path: `/api`
+- REST-style routes: `GET /api/orders`, `POST /api/orders`, `PATCH /api/orders/:id`, `DELETE /api/orders/:id`
+- JSON request/response bodies
+- Consistent error shape: `{ error: "message" }` with appropriate HTTP status codes
+- Enable CORS for the Next.js client origin
+- Use `express.json()` middleware
+- Validate required fields in route handlers; return `400` for bad input
+
+### Suggested domain collections
+- `menuItems` — name, description, price, category, available
+- `orders` — tableId, items[], status, total, createdAt
+- `tables` — number, capacity, status (available, occupied, reserved)
+- `reservations` — customerName, phone, partySize, dateTime, tableId, status
+- `staff` — name, role, email, active
+
+Add collections only as needed; keep the backend minimal.
+
+### Environment variables (server)
+- `PORT` — default 5000
+- `MONGODB_URI`
+- `DB_NAME`
+- `CLIENT_URL` — for CORS
+- Ask the user for confirmation before creating or modifying `.env`
+
+---
+
+## Frontend Rules (`/client`)
+
+### Next.js
+- Use App Router (`app/` directory)
+- File naming: `page.js`, `layout.js`, `loading.js`, `error.js`
+- Use `"use client"` only when needed (hooks, event handlers, Better Auth client)
+- Fetch backend data from server components when possible; use client components for interactive UI
+- API base URL via `process.env.NEXT_PUBLIC_API_URL`
+
+### Better Auth
+- Configure auth in `lib/auth.js` (or `lib/auth-client.js` for client)
+- Protect admin routes with auth checks
+- Do not roll custom JWT/session logic when Better Auth covers the use case
+- Keep auth config in JavaScript; follow Better Auth docs for Next.js integration
+
+### Styling (Tailwind + DaisyUI)
+- Use DaisyUI components: `btn`, `card`, `table`, `modal`, `navbar`, `badge`, `input`, `select`, `alert`
+- Prefer semantic DaisyUI classes over custom CSS
+- Use a consistent theme (e.g. `data-theme="corporate"` or `business` on `<html>`)
+- Layout: sidebar or top navbar for admin sections (Dashboard, Menu, Orders, Tables, Reservations, Staff)
+- Tables for list views; cards for dashboards; modals or drawer forms for create/edit
+- Show loading states (`loading` skeleton or spinner) and error alerts (`alert alert-error`)
+
+```jsx
+// ✅ GOOD — DaisyUI + Tailwind
+<button className="btn btn-primary">Add Menu Item</button>
+<div className="card bg-base-100 shadow-xl">
+  <div className="card-body">...</div>
+</div>
+```
+
+### Frontend organization
+- `components/` — reusable UI (`Sidebar`, `DataTable`, `OrderStatusBadge`, `PageHeader`)
+- `lib/api.js` — fetch wrapper pointing to Express backend
+- `app/(dashboard)/` — grouped admin routes with shared layout
+- Keep components small and focused; avoid over-abstraction
+
+### Environment variables (client)
+- `NEXT_PUBLIC_API_URL`
+- Better Auth variables as required by setup
+- Ask the user for confirmation before creating or modifying `.env.local`
+
+---
+
+## General Coding Standards
+
+- **JavaScript only** — no TypeScript, no JSDoc type layers unless the user asks
+- **Minimal scope** — smallest change that solves the task; no premature features
+- **Match existing style** — naming, imports (`require` on server, `import` on client per ecosystem norms)
+- **Error handling** — always handle async errors; never empty catch blocks
+- **Security** — never commit secrets; sanitize user input; use env vars for credentials
+- **No Mongoose, no TypeScript, no backend MVC** — these are hard constraints
+
+---
+
+## When Adding Features
+
+1. **Backend first**: add route + MongoDB logic in `server/index.js`
+2. **Frontend second**: page + component calling the new API endpoint
+3. **UI**: use DaisyUI patterns; ensure mobile responsiveness (`overflow-x-auto` on tables, responsive grid)
+4. **Auth**: gate admin pages if the feature is sensitive
+5. Do not add tests, docs, or extra files unless the user requests them
+
+---
+
+## Commands Reference
+
+```bash
+# Server
+cd server && npm install && node index.js
+
+# Client
+cd client && npm install && npm run dev
+```
+
+Use `npm run dev` for Next.js development. Use separate terminals for server and client.
