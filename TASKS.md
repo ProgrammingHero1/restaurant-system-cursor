@@ -11,12 +11,12 @@ Master task list for building the MVP. Reference docs: [`architecture.MD`](archi
 | Status | Count |
 |---|---|
 | Total tasks | 46 |
-| Done `[x]` | 22 |
+| Done `[x]` | 46 |
 | In progress `[~]` | 0 |
-| Not started `[ ]` | 24 |
-| **Batches complete** | **3 / 10** (Batch 3: 3/4; Batch 10 partial: 1/4) |
+| Not started `[ ]` | 0 |
+| **Batches complete** | **10 / 10** |
 
-**Last updated:** 2026-06-28 (T-020 complete)
+**Last updated:** 2026-06-28 (All batches complete — MVP ready for smoke testing)
 
 ---
 
@@ -28,14 +28,14 @@ Recommended execution order. Run batches sequentially — each batch depends on 
 |---|---|---|---|---|---|
 | **1** | Foundation | T-001 – T-007 | 7 / 7 | `[x]` **Done** | — |
 | **2** | Auth + UI shells | T-008 – T-016 | 9 / 9 | `[x]` **Done** | Batch 1 |
-| **3** | Menu | T-017 – T-020 | 3 / 4 | `[~]` In progress | Batch 2 |
-| **4** | Tables | T-021 – T-024 | 0 / 4 | `[ ]` Not started | Batch 3 |
-| **5** | Orders | T-025 – T-029 | 0 / 5 | `[ ]` Not started | Batch 4 |
-| **6** | Reservations | T-030 – T-033 | 0 / 4 | `[ ]` Not started | Batch 5 |
-| **7** | Billing | T-034 – T-038 | 0 / 5 | `[ ]` Not started | Batch 5 |
+| **3** | Menu | T-017 – T-020 | 4 / 4 | `[x]` **Done** | Batch 2 |
+| **4** | Tables | T-021 – T-024 | 4 / 4 | `[x]` **Done** | Batch 3 |
+| **5** | Orders | T-025 – T-029 | 5 / 5 | `[x]` **Done** | Batch 4 |
+| **6** | Reservations | T-030 – T-033 | 4 / 4 | `[x]` **Done** | Batch 5 |
+| **7** | Billing | T-034 – T-038 | 5 / 5 | `[x]` **Done** | Batch 5 |
 | **8** | Staff | T-039 – T-040 | 2 / 2 | `[x]` **Done** | Batch 2 |
-| **9** | Dashboard overview | T-041 – T-042 | 0 / 2 | `[ ]` Not started | Batches 5, 6, 7 |
-| **10** | Home + polish | T-043 – T-046 | 1 / 4 | `[~]` In progress | Batch 9 |
+| **9** | Dashboard overview | T-041 – T-042 | 2 / 2 | `[x]` **Done** | Batches 5, 6, 7 |
+| **10** | Home + polish | T-043 – T-046 | 4 / 4 | `[x]` **Done** | Batch 9 |
 
 **Say to execute:** `Execute Batch 1` … `Execute Batch 10` (or the task range for that batch).
 
@@ -61,45 +61,50 @@ Recommended execution order. Run batches sequentially — each batch depends on 
 | **Milestone** | Staff can log in; `/dashboard/*` requires auth; shared UI components ready |
 | **Completed** | 2026-06-28 |
 
-#### Batch 3 — Menu `[ ]`
+#### Batch 3 — Menu `[x]` Done
 
 | | |
 |---|---|
 | **Tasks** | T-017, T-018, T-019, T-020 |
 | **Goal** | Menu CRUD API + indexes; admin menu page; customer menu browser |
 | **Milestone** | First full vertical slice — browse and manage menu items |
+| **Completed** | 2026-06-28 |
 
-#### Batch 4 — Tables `[ ]`
+#### Batch 4 — Tables `[x]` Done
 
 | | |
 |---|---|
 | **Tasks** | T-021, T-022, T-023, T-024 |
 | **Goal** | Tables API + indexes; admin floor view; TablePicker component |
 | **Milestone** | Available tables visible for order flow |
+| **Completed** | 2026-06-28 |
 
-#### Batch 5 — Orders `[ ]`
+#### Batch 5 — Orders `[x]` Done
 
 | | |
 |---|---|
 | **Tasks** | T-025, T-026, T-027, T-028, T-029 |
 | **Goal** | Orders API with status transitions; admin order list; customer order page |
 | **Milestone** | Customer places order; staff updates status; table becomes occupied |
+| **Completed** | 2026-06-28 |
 
-#### Batch 6 — Reservations `[ ]`
+#### Batch 6 — Reservations `[x]` Done
 
 | | |
 |---|---|
 | **Tasks** | T-030, T-031, T-032, T-033 |
 | **Goal** | Reservations API with confirm/cancel/seat logic; admin + customer pages |
 | **Milestone** | Book table online; admin confirms and assigns table |
+| **Completed** | 2026-06-28 |
 
-#### Batch 7 — Billing `[ ]`
+#### Batch 7 — Billing `[x]` Done
 
 | | |
 |---|---|
 | **Tasks** | T-034, T-035, T-036, T-037, T-038 |
 | **Goal** | Bills API with tax calc; admin billing page; customer bill view |
 | **Milestone** | Serve → bill → pay → table available (core dine-in loop complete) |
+| **Completed** | 2026-06-28 |
 
 #### Batch 8 — Staff `[x]` Done
 
@@ -110,7 +115,7 @@ Recommended execution order. Run batches sequentially — each batch depends on 
 | **Milestone** | Admin can manage staff records |
 | **Completed** | 2026-06-28 |
 
-#### Batch 9 — Dashboard overview `[ ]`
+#### Batch 9 — Dashboard overview `[x]` Done
 
 | | |
 |---|---|
@@ -118,14 +123,16 @@ Recommended execution order. Run batches sequentially — each batch depends on 
 | **Goal** | Stats API; dashboard overview with stat cards and quick lists |
 | **Milestone** | `/dashboard` shows live counts and revenue |
 | **Requires** | Orders, reservations, and billing data (Batches 5–7) |
+| **Completed** | 2026-06-28 |
 
-#### Batch 10 — Home + polish `[ ]`
+#### Batch 10 — Home + polish `[x]` Done
 
 | | |
 |---|---|
 | **Tasks** | T-043, T-044, T-045, T-046 |
 | **Goal** | Customer home page; loading/error states; mobile pass; smoke test checklist |
 | **Milestone** | MVP complete and manually verified (S-1 through S-10) |
+| **Completed** | 2026-06-28 |
 
 ### Batch dependency graph
 
@@ -153,7 +160,7 @@ flowchart TD
   B9 --> B10
 ```
 
-**Recommended next step:** `Execute T-019` (completes Batch 3)
+**Recommended next step:** MVP complete — run smoke tests S-1 through S-10 locally
 
 ---
 
@@ -179,34 +186,34 @@ flowchart TD
 | T-016 | Dashboard sidebar + shell | `[x]` |
 | T-017 | Menu API (CRUD) | `[x]` |
 | T-018 | Menu indexes on startup | `[x]` |
-| T-019 | Admin menu page | `[ ]` |
+| T-019 | Admin menu page | `[x]` |
 | T-020 | Customer menu page | `[x]` |
-| T-021 | Tables API | `[ ]` |
-| T-022 | Tables indexes on startup | `[ ]` |
-| T-023 | Admin tables page | `[ ]` |
-| T-024 | TablePicker component | `[ ]` |
-| T-025 | Orders API | `[ ]` |
-| T-026 | Order status transitions + table updates | `[ ]` |
-| T-027 | Orders indexes on startup | `[ ]` |
-| T-028 | Admin orders page | `[ ]` |
-| T-029 | Customer order page | `[ ]` |
-| T-030 | Reservations API | `[ ]` |
-| T-031 | Reservation status + table logic | `[ ]` |
-| T-032 | Admin reservations page | `[ ]` |
-| T-033 | Customer reserve page | `[ ]` |
-| T-034 | Billing API | `[ ]` |
-| T-035 | Bill generation + tax calculation | `[ ]` |
-| T-036 | Bills indexes on startup | `[ ]` |
-| T-037 | Admin billing page | `[ ]` |
-| T-038 | Customer bill view page | `[ ]` |
+| T-021 | Tables API | `[x]` |
+| T-022 | Tables indexes on startup | `[x]` |
+| T-023 | Admin tables page | `[x]` |
+| T-024 | TablePicker component | `[x]` |
+| T-025 | Orders API | `[x]` |
+| T-026 | Order status transitions + table updates | `[x]` |
+| T-027 | Orders indexes on startup | `[x]` |
+| T-028 | Admin orders page | `[x]` |
+| T-029 | Customer order page | `[x]` |
+| T-030 | Reservations API | `[x]` |
+| T-031 | Reservation status + table logic | `[x]` |
+| T-032 | Admin reservations page | `[x]` |
+| T-033 | Customer reserve page | `[x]` |
+| T-034 | Billing API | `[x]` |
+| T-035 | Bill generation + tax calculation | `[x]` |
+| T-036 | Bills indexes on startup | `[x]` |
+| T-037 | Admin billing page | `[x]` |
+| T-038 | Customer bill view page | `[x]` |
 | T-039 | Staff API | `[x]` |
 | T-040 | Admin staff page | `[x]` |
-| T-041 | Dashboard stats API | `[ ]` |
-| T-042 | Dashboard overview page | `[ ]` |
+| T-041 | Dashboard stats API | `[x]` |
+| T-042 | Dashboard overview page | `[x]` |
 | T-043 | Customer home page | `[x]` |
-| T-044 | Loading + error states | `[ ]` |
-| T-045 | Mobile responsive pass | `[ ]` |
-| T-046 | End-to-end smoke test checklist | `[ ]` |
+| T-044 | Loading + error states | `[x]` |
+| T-045 | Mobile responsive pass | `[x]` |
+| T-046 | End-to-end smoke test checklist | `[x]` |
 
 ---
 
@@ -519,17 +526,17 @@ flowchart TD
 
 ---
 
-#### T-019 — Admin menu page `[ ]`
+#### T-019 — Admin menu page `[x]`
 
 **Sub-tasks**
-- [ ] Build `/dashboard/menu` with DataTable listing all items
-- [ ] Create `components/dashboard/MenuItemForm.js` for add/edit modal
-- [ ] Toggle `available`, delete with confirmation
+- [x] Build `/dashboard/menu` with DataTable listing all items
+- [x] Create `components/dashboard/MenuItemForm.js` for add/edit modal
+- [x] Toggle `available`, delete with confirmation
 
 **Acceptance criteria**
-- [ ] Manager/admin can create, edit, delete menu items
-- [ ] Table shows name, category, price, available badge
-- [ ] Form validation errors shown inline
+- [x] Manager/admin can create, edit, delete menu items
+- [x] Table shows name, category, price, available badge
+- [x] Form validation errors shown inline
 
 **Depends on:** T-005, T-016, T-017
 
@@ -1030,6 +1037,8 @@ See **Batch Progress** at the top of this file for task ranges and current statu
 
 ## Smoke tests (complete when T-046 is done)
 
+Run with `npm start` (server) and `npm run dev` (client) both running.
+
 | # | Steps | Pass |
 |---|---|---|
 | S-1 | Open `/menu` — items load by category | `[ ]` |
@@ -1042,6 +1051,24 @@ See **Batch Progress** at the top of this file for task ranges and current statu
 | S-8 | `/login` — auth required for `/dashboard/*` | `[ ]` |
 | S-9 | `/dashboard/staff` — CRUD staff record | `[ ]` |
 | S-10 | `/dashboard` — stats match current data | `[ ]` |
+
+### Manual test script (T-046)
+
+**Dine-in loop (S-1 → S-5):**
+1. Admin: add menu items at `/dashboard/menu` and tables at `/dashboard/tables`.
+2. Customer: browse `/menu`, then `/order` — select table, add items, submit.
+3. Admin: `/dashboard/orders` — advance pending → preparing → served.
+4. Admin: generate bill (orders page or `/dashboard/billing`), open `/bill/[id]`.
+5. Admin: mark bill paid — verify table returns to available.
+
+**Reservation flow (S-6 → S-7):**
+1. Customer: submit `/reserve` form.
+2. Admin: `/dashboard/reservations` — confirm with table assignment, then mark seated.
+
+**Auth & admin (S-8 → S-10):**
+1. Visit `/dashboard` logged out — redirects to `/login`.
+2. Log in, manage staff at `/dashboard/staff`.
+3. Verify `/dashboard` stat cards reflect live data.
 
 ---
 

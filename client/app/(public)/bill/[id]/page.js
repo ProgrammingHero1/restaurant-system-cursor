@@ -1,10 +1,30 @@
+import BillSummary from "@/components/public/BillSummary";
+import EmptyState from "@/components/ui/EmptyState";
+import { api } from "@/lib/api";
+
+export const dynamic = "force-dynamic";
+
 export default async function BillPage({ params }) {
   const { id } = await params;
+  let bill = null;
+  let error = null;
+
+  try {
+    bill = await api.get(`/api/bills/${id}`);
+  } catch (err) {
+    error = err.message || "Bill not found";
+  }
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-4">Bill</h1>
-      <p className="text-base-content/70">Bill #{id} — coming in T-038.</p>
+    <div className="container mx-auto px-4 py-8 md:py-12">
+      {error || !bill ? (
+        <EmptyState
+          title="Bill not found"
+          description={error || "This bill may have been removed or the link is invalid."}
+        />
+      ) : (
+        <BillSummary bill={bill} />
+      )}
     </div>
   );
 }
