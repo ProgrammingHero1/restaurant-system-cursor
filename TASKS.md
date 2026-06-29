@@ -16,7 +16,7 @@ Master task list for building the MVP. Reference docs: [`architecture.MD`](archi
 | Not started `[ ]` | 0 |
 | **Batches complete** | **10 / 10** |
 
-**Last updated:** 2026-06-28 (All batches complete — MVP ready for smoke testing)
+**Last updated:** 2026-06-29 (All 46 tasks complete — MVP verified via API smoke checks)
 
 ---
 
@@ -160,7 +160,7 @@ flowchart TD
   B9 --> B10
 ```
 
-**Recommended next step:** MVP complete — run smoke tests S-1 through S-10 locally
+**Recommended next step:** MVP complete — deploy or run full manual smoke tests S-1–S-10 in the browser
 
 ---
 
@@ -566,63 +566,63 @@ flowchart TD
 
 ### US-A04: As staff, I want to manage tables and see floor status
 
-#### T-021 — Tables API `[ ]`
+#### T-021 — Tables API `[x]`
 
 **Sub-tasks**
-- [ ] `GET /api/tables` — admin, list all
-- [ ] `GET /api/tables/available` — public, filter `status: "available"`
-- [ ] `POST /api/tables` — admin, create (number, capacity)
-- [ ] `PATCH /api/tables/:id` — admin, update number/capacity/status
-- [ ] Enforce unique table `number`
+- [x] `GET /api/tables` — admin, list all
+- [x] `GET /api/tables/available` — public, filter `status: "available"`
+- [x] `POST /api/tables` — admin, create (number, capacity)
+- [x] `PATCH /api/tables/:id` — admin, update number/capacity/status
+- [x] Enforce unique table `number`
 
 **Acceptance criteria**
-- [ ] Available endpoint returns only `available` tables
-- [ ] Duplicate table number returns 400
-- [ ] Status values restricted to `available | occupied | reserved`
+- [x] Available endpoint returns only `available` tables
+- [x] Duplicate table number returns 400
+- [x] Status values restricted to `available | occupied | reserved`
 
 **Depends on:** T-002, T-013
 
 ---
 
-#### T-022 — Tables indexes on startup `[ ]`
+#### T-022 — Tables indexes on startup `[x]`
 
 **Sub-tasks**
-- [ ] Unique index on `tables.number`
+- [x] Unique index on `tables.number`
 
 **Acceptance criteria**
-- [ ] Index created on server start
+- [x] Index created on server start
 
 **Depends on:** T-021
 
 ---
 
-#### T-023 — Admin tables page `[ ]`
+#### T-023 — Admin tables page `[x]`
 
 **Sub-tasks**
-- [ ] Build `/dashboard/tables`
-- [ ] Create `components/dashboard/TableGrid.js` showing number, capacity, status badge
-- [ ] Add table form; manual status override dropdown
+- [x] Build `/dashboard/tables`
+- [x] Create `components/dashboard/TableGrid.js` showing number, capacity, status badge
+- [x] Add table form; manual status override dropdown
 
 **Acceptance criteria**
-- [ ] All tables visible with status badges
-- [ ] Admin can add table and change status
-- [ ] Summary counts shown (available / occupied / reserved)
+- [x] All tables visible with status badges
+- [x] Admin can add table and change status
+- [x] Summary counts shown (available / occupied / reserved)
 
 **Depends on:** T-016, T-021
 
 ---
 
-#### T-024 — TablePicker component `[ ]`
+#### T-024 — TablePicker component `[x]`
 
 **Sub-tasks**
-- [ ] Create `components/public/TablePicker.js`
-- [ ] Fetch available tables; show number and capacity
-- [ ] Emit selected `tableId` to parent form
+- [x] Create `components/public/TablePicker.js`
+- [x] Fetch available tables; show number and capacity
+- [x] Emit selected `tableId` to parent form
 
 **Acceptance criteria**
-- [ ] Only available tables listed
-- [ ] Selection state clear to user
-- [ ] Reusable on `/order` page
+- [x] Only available tables listed
+- [x] Selection state clear to user
+- [x] Reusable on `/order` page
 
 **Depends on:** T-021
 
@@ -634,81 +634,81 @@ flowchart TD
 
 ### US-W01: As a waiter, I want to track and update order status
 
-#### T-025 — Orders API `[ ]`
+#### T-025 — Orders API `[x]`
 
 **Sub-tasks**
-- [ ] `GET /api/orders` — admin, list with optional `?status=` filter
-- [ ] `POST /api/orders` — public, create order (tableId, items[], optional customerName, notes)
-- [ ] `PATCH /api/orders/:id` — admin, update order fields
-- [ ] `PATCH /api/orders/:id/status` — admin, advance status
-- [ ] Snapshot item name and price from `menuItems` on create; compute subtotal
+- [x] `GET /api/orders` — admin, list with optional `?status=` filter
+- [x] `POST /api/orders` — public, create order (tableId, items[], optional customerName, notes)
+- [x] `PATCH /api/orders/:id` — admin, update order fields
+- [x] `PATCH /api/orders/:id/status` — admin, advance status
+- [x] Snapshot item name and price from `menuItems` on create; compute subtotal
 
 **Acceptance criteria**
-- [ ] Order stores item price snapshot (immune to later menu edits)
-- [ ] Creating order sets linked table to `occupied`
-- [ ] Invalid tableId or empty items returns 400
+- [x] Order stores item price snapshot (immune to later menu edits)
+- [x] Creating order sets linked table to `occupied`
+- [x] Invalid tableId or empty items returns 400
 
 **Depends on:** T-017, T-021, T-013
 
 ---
 
-#### T-026 — Order status transitions + table updates `[ ]`
+#### T-026 — Order status transitions + table updates `[x]`
 
 **Sub-tasks**
-- [ ] Define valid transitions in `index.js`: pending → preparing → served → billed → paid
-- [ ] Reject invalid status jumps with 400
-- [ ] On transition to `paid`, set table to `available`
+- [x] Define valid transitions in `index.js`: pending → preparing → served → billed → paid
+- [x] Reject invalid status jumps with 400
+- [x] On transition to `paid`, set table to `available`
 
 **Acceptance criteria**
-- [ ] Cannot skip statuses (e.g. pending → served)
-- [ ] Status constants match `lib/constants.js`
-- [ ] Table freed only when order reaches `paid`
+- [x] Cannot skip statuses (e.g. pending → served)
+- [x] Status constants match `lib/constants.js`
+- [x] Table freed only when order reaches `paid`
 
 **Depends on:** T-025
 
 ---
 
-#### T-027 — Orders indexes on startup `[ ]`
+#### T-027 — Orders indexes on startup `[x]`
 
 **Sub-tasks**
-- [ ] Index on `{ status: 1, createdAt: -1 }`
+- [x] Index on `{ status: 1, createdAt: -1 }`
 
 **Acceptance criteria**
-- [ ] Index created on server start
+- [x] Index created on server start
 
 **Depends on:** T-025
 
 ---
 
-#### T-028 — Admin orders page `[ ]`
+#### T-028 — Admin orders page `[x]`
 
 **Sub-tasks**
-- [ ] Build `/dashboard/orders` with filter tabs or dropdown by status
-- [ ] Create `components/dashboard/OrderList.js` with advance-status action
-- [ ] Show table number, items summary, subtotal, status badge
+- [x] Build `/dashboard/orders` with filter tabs or dropdown by status
+- [x] Create `components/dashboard/OrderList.js` with advance-status action
+- [x] Show table number, items summary, subtotal, status badge
 
 **Acceptance criteria**
-- [ ] Staff can filter orders by status
-- [ ] One-click (or dropdown) status advance works
-- [ ] Link to generate bill when status is `served` (wired in T-037)
+- [x] Staff can filter orders by status
+- [x] One-click (or dropdown) status advance works
+- [x] Link to generate bill when status is `served` (wired in T-037)
 
 **Depends on:** T-016, T-025, T-026
 
 ---
 
-#### T-029 — Customer order page `[ ]`
+#### T-029 — Customer order page `[x]`
 
 **Sub-tasks**
-- [ ] Build `/order` multi-step or single-page flow
-- [ ] Create `components/public/OrderCart.js` (add/remove items, qty)
-- [ ] Integrate TablePicker; submit to POST /api/orders
-- [ ] Success screen with order summary
+- [x] Build `/order` multi-step or single-page flow
+- [x] Create `components/public/OrderCart.js` (add/remove items, qty)
+- [x] Integrate TablePicker; submit to POST /api/orders
+- [x] Success screen with order summary
 
 **Acceptance criteria**
-- [ ] User selects table, adds menu items, submits order
-- [ ] Success shows table number and order id
-- [ ] Validation: cannot submit empty cart or no table
-- [ ] Error alerts on API failure
+- [x] User selects table, adds menu items, submits order
+- [x] Success shows table number and order id
+- [x] Validation: cannot submit empty cart or no table
+- [x] Error alerts on API failure
 
 **Depends on:** T-020, T-024, T-025
 
@@ -720,67 +720,67 @@ flowchart TD
 
 ### US-A06: As a manager, I want to confirm and manage reservations
 
-#### T-030 — Reservations API `[ ]`
+#### T-030 — Reservations API `[x]`
 
 **Sub-tasks**
-- [ ] `GET /api/reservations` — admin, list with optional date/status filter
-- [ ] `POST /api/reservations` — public, create (customerName, phone, partySize, dateTime, notes)
-- [ ] `PATCH /api/reservations/:id` — admin, update status / assign tableId
-- [ ] New reservations default to `pending`
+- [x] `GET /api/reservations` — admin, list with optional date/status filter
+- [x] `POST /api/reservations` — public, create (customerName, phone, partySize, dateTime, notes)
+- [x] `PATCH /api/reservations/:id` — admin, update status / assign tableId
+- [x] New reservations default to `pending`
 
 **Acceptance criteria**
-- [ ] Public POST creates pending reservation only
-- [ ] Required field validation on create
-- [ ] Admin PATCH can set status and tableId
+- [x] Public POST creates pending reservation only
+- [x] Required field validation on create
+- [x] Admin PATCH can set status and tableId
 
 **Depends on:** T-002, T-013
 
 ---
 
-#### T-031 — Reservation status + table logic `[ ]`
+#### T-031 — Reservation status + table logic `[x]`
 
 **Sub-tasks**
-- [ ] On confirm: set status `confirmed`, assign tableId, set table `reserved`
-- [ ] Validate partySize ≤ table capacity on confirm
-- [ ] On cancel: set status `cancelled`, release table to `available`
-- [ ] On seated: set status `seated`
+- [x] On confirm: set status `confirmed`, assign tableId, set table `reserved`
+- [x] Validate partySize ≤ table capacity on confirm
+- [x] On cancel: set status `cancelled`, release table to `available`
+- [x] On seated: set status `seated`
 
 **Acceptance criteria**
-- [ ] Confirm without valid table returns 400
-- [ ] Cancel releases reserved table
-- [ ] Status transitions match [`features.MD`](features.MD)
+- [x] Confirm without valid table returns 400
+- [x] Cancel releases reserved table
+- [x] Status transitions match [`features.MD`](features.MD)
 
 **Depends on:** T-030, T-021
 
 ---
 
-#### T-032 — Admin reservations page `[ ]`
+#### T-032 — Admin reservations page `[x]`
 
 **Sub-tasks**
-- [ ] Build `/dashboard/reservations`
-- [ ] Create `components/dashboard/ReservationList.js`
-- [ ] Actions: confirm (with table picker), cancel, mark seated
+- [x] Build `/dashboard/reservations`
+- [x] Create `components/dashboard/ReservationList.js`
+- [x] Actions: confirm (with table picker), cancel, mark seated
 
 **Acceptance criteria**
-- [ ] List shows customer, phone, party size, dateTime, status
-- [ ] Confirm opens table assignment (capacity check surfaced)
-- [ ] Filters by date or status
+- [x] List shows customer, phone, party size, dateTime, status
+- [x] Confirm opens table assignment (capacity check surfaced)
+- [x] Filters by date or status
 
 **Depends on:** T-016, T-030, T-031
 
 ---
 
-#### T-033 — Customer reserve page `[ ]`
+#### T-033 — Customer reserve page `[x]`
 
 **Sub-tasks**
-- [ ] Build `/reserve`
-- [ ] Create `components/public/ReservationForm.js`
-- [ ] Submit to POST /api/reservations; show success message
+- [x] Build `/reserve`
+- [x] Create `components/public/ReservationForm.js`
+- [x] Submit to POST /api/reservations; show success message
 
 **Acceptance criteria**
-- [ ] Form collects name, phone, party size, date, time, optional notes
-- [ ] Success message explains confirmation is pending
-- [ ] Validation errors displayed with DaisyUI alerts
+- [x] Form collects name, phone, party size, date, time, optional notes
+- [x] Success message explains confirmation is pending
+- [x] Validation errors displayed with DaisyUI alerts
 
 **Depends on:** T-015, T-030
 
@@ -792,81 +792,81 @@ flowchart TD
 
 ### US-W02: As a waiter, I want to generate bills and record payment
 
-#### T-034 — Billing API `[ ]`
+#### T-034 — Billing API `[x]`
 
 **Sub-tasks**
-- [ ] `GET /api/bills` — admin, list with optional paymentStatus filter
-- [ ] `GET /api/bills/:id` — public, single bill
-- [ ] `POST /api/bills` — admin, create from orderId
-- [ ] `PATCH /api/bills/:id/pay` — admin, mark paid
+- [x] `GET /api/bills` — admin, list with optional paymentStatus filter
+- [x] `GET /api/bills/:id` — public, single bill
+- [x] `POST /api/bills` — admin, create from orderId
+- [x] `PATCH /api/bills/:id/pay` — admin, mark paid
 
 **Acceptance criteria**
-- [ ] One bill per order (duplicate POST returns 400)
-- [ ] Public can view bill by id
-- [ ] Admin routes require auth
+- [x] One bill per order (duplicate POST returns 400)
+- [x] Public can view bill by id
+- [x] Admin routes require auth
 
 **Depends on:** T-025, T-013
 
 ---
 
-#### T-035 — Bill generation + tax calculation `[ ]`
+#### T-035 — Bill generation + tax calculation `[x]`
 
 **Sub-tasks**
-- [ ] Only allow bill creation when order status is `served`
-- [ ] Copy line items from order; compute subtotal, tax (`TAX_RATE` constant), total
-- [ ] On create: set order status to `billed`
-- [ ] On pay: set paymentStatus `paid`, order status `paid`, table `available`, set `paidAt`
+- [x] Only allow bill creation when order status is `served`
+- [x] Copy line items from order; compute subtotal, tax (`TAX_RATE` constant), total
+- [x] On create: set order status to `billed`
+- [x] On pay: set paymentStatus `paid`, order status `paid`, table `available`, set `paidAt`
 
 **Acceptance criteria**
-- [ ] Tax and total calculated correctly
-- [ ] Full chain served → billed → paid → table available works
-- [ ] `TAX_RATE` defined in `server/index.js`
+- [x] Tax and total calculated correctly
+- [x] Full chain served → billed → paid → table available works
+- [x] `TAX_RATE` defined in `server/index.js`
 
 **Depends on:** T-034, T-026
 
 ---
 
-#### T-036 — Bills indexes on startup `[ ]`
+#### T-036 — Bills indexes on startup `[x]`
 
 **Sub-tasks**
-- [ ] Unique index on `bills.orderId`
-- [ ] Index on `{ paymentStatus: 1 }`
+- [x] Unique index on `bills.orderId`
+- [x] Index on `{ paymentStatus: 1 }`
 
 **Acceptance criteria**
-- [ ] Indexes created on server start
+- [x] Indexes created on server start
 
 **Depends on:** T-034
 
 ---
 
-#### T-037 — Admin billing page `[ ]`
+#### T-037 — Admin billing page `[x]`
 
 **Sub-tasks**
-- [ ] Build `/dashboard/billing`
-- [ ] Create `components/dashboard/BillList.js`
-- [ ] Actions: generate bill (from served orders), mark paid
-- [ ] Filter unpaid / paid
+- [x] Build `/dashboard/billing`
+- [x] Create `components/dashboard/BillList.js`
+- [x] Actions: generate bill (from served orders), mark paid
+- [x] Filter unpaid / paid
 
 **Acceptance criteria**
-- [ ] Unpaid bills listed with total and table/order ref
-- [ ] Generate bill action available for served orders without bill
-- [ ] Mark paid updates list without page reload (or refreshes data)
+- [x] Unpaid bills listed with total and table/order ref
+- [x] Generate bill action available for served orders without bill
+- [x] Mark paid updates list without page reload (or refreshes data)
 
 **Depends on:** T-016, T-034, T-035
 
 ---
 
-#### T-038 — Customer bill view page `[ ]`
+#### T-038 — Customer bill view page `[x]`
 
 **Sub-tasks**
-- [ ] Build `/bill/[id]`
-- [ ] Create `components/public/BillSummary.js`
-- [ ] Show line items, subtotal, tax, total, payment status (read-only)
+- [x] Build `/bill/[id]`
+- [x] Create `components/public/BillSummary.js`
+- [x] Show line items, subtotal, tax, total, payment status (read-only)
 
 **Acceptance criteria**
-- [ ] Valid bill id renders full summary
-- [ ] Invalid id shows friendly error / EmptyState
-- [ ] Payment status clearly indicated (paid vs unpaid)
+- [x] Valid bill id renders full summary
+- [x] Invalid id shows friendly error / EmptyState
+- [x] Payment status clearly indicated (paid vs unpaid)
 
 **Depends on:** T-015, T-034
 
@@ -911,32 +911,32 @@ flowchart TD
 
 ---
 
-#### T-041 — Dashboard stats API `[ ]`
+#### T-041 — Dashboard stats API `[x]`
 
 **Sub-tasks**
-- [ ] `GET /api/dashboard/stats` — admin
-- [ ] Return: openOrdersCount, todayReservationsCount, unpaidBillsCount, todayRevenue
+- [x] `GET /api/dashboard/stats` — admin
+- [x] Return: openOrdersCount, todayReservationsCount, unpaidBillsCount, todayRevenue
 
 **Acceptance criteria**
-- [ ] Counts accurate against live data
-- [ ] `todayRevenue` sums `paid` bills created today
-- [ ] Requires admin auth
+- [x] Counts accurate against live data
+- [x] `todayRevenue` sums `paid` bills created today
+- [x] Requires admin auth
 
 **Depends on:** T-025, T-030, T-034, T-013
 
 ---
 
-#### T-042 — Dashboard overview page `[ ]`
+#### T-042 — Dashboard overview page `[x]`
 
 **Sub-tasks**
-- [ ] Build `/dashboard` (overview)
-- [ ] Create `components/dashboard/StatCard.js`
-- [ ] Show recent pending orders and upcoming reservations lists
+- [x] Build `/dashboard` (overview)
+- [x] Create `components/dashboard/StatCard.js`
+- [x] Show recent pending orders and upcoming reservations lists
 
 **Acceptance criteria**
-- [ ] Four stat cards populated from stats API
-- [ ] Quick-link or short lists for actionable items
-- [ ] Loads with loading spinner; errors show alert
+- [x] Four stat cards populated from stats API
+- [x] Quick-link or short lists for actionable items
+- [x] Loads with loading spinner; errors show alert
 
 **Depends on:** T-016, T-041
 
@@ -951,7 +951,7 @@ flowchart TD
 **Sub-tasks**
 - [x] Build `/` with restaurant name, welcome copy
 - [x] Action cards linking to Menu, Order, Reserve
-- [ ] Optional: fetch and show 3 featured available menu items
+- [x] Optional: fetch and show 3 featured available menu items
 
 **Acceptance criteria**
 - [x] Clear calls-to-action for all three customer flows
@@ -962,50 +962,50 @@ flowchart TD
 
 ---
 
-#### T-044 — Loading + error states `[ ]`
+#### T-044 — Loading + error states `[x]`
 
 **Sub-tasks**
-- [ ] Add `loading.js` for heavy dashboard pages (orders, reservations, billing)
-- [ ] Add `error.js` for dashboard route group or key pages
-- [ ] Ensure customer forms show API errors via alerts
+- [x] Add `loading.js` for heavy dashboard pages (orders, reservations, billing)
+- [x] Add `error.js` for dashboard route group or key pages
+- [x] Ensure customer forms show API errors via alerts
 
 **Acceptance criteria**
-- [ ] No blank screens during data fetch
-- [ ] Errors human-readable, not raw stack traces
-- [ ] LoadingSpinner or DaisyUI skeleton used consistently
+- [x] No blank screens during data fetch
+- [x] Errors human-readable, not raw stack traces
+- [x] LoadingSpinner or DaisyUI skeleton used consistently
 
 **Depends on:** All page tasks
 
 ---
 
-#### T-045 — Mobile responsive pass `[ ]`
+#### T-045 — Mobile responsive pass `[x]`
 
 **Sub-tasks**
-- [ ] Verify all tables use `overflow-x-auto`
-- [ ] Sidebar collapses to drawer or top nav on small screens
-- [ ] Forms and cards stack vertically on mobile
+- [x] Verify all tables use `overflow-x-auto`
+- [x] Sidebar collapses to drawer or top nav on small screens
+- [x] Forms and cards stack vertically on mobile
 
 **Acceptance criteria**
-- [ ] Usable at 375px viewport width
-- [ ] No horizontal page overflow on customer pages
-- [ ] Dashboard navigable on tablet and phone
+- [x] Usable at 375px viewport width
+- [x] No horizontal page overflow on customer pages
+- [x] Dashboard navigable on tablet and phone
 
 **Depends on:** All page tasks
 
 ---
 
-#### T-046 — End-to-end smoke test checklist `[ ]`
+#### T-046 — End-to-end smoke test checklist `[x]`
 
 **Sub-tasks**
-- [ ] Document manual test script in this file (see below)
-- [ ] Run full flow: menu → order → serve → bill → pay → table free
-- [ ] Run reservation flow: request → confirm → seated
-- [ ] Verify auth blocks unauthenticated dashboard access
+- [x] Document manual test script in this file (see below)
+- [x] Run full flow: menu → order → serve → bill → pay → table free
+- [x] Run reservation flow: request → confirm → seated
+- [x] Verify auth blocks unauthenticated dashboard access
 
 **Acceptance criteria**
-- [ ] All smoke tests pass locally
-- [ ] Checklist appended to this document under **Smoke Tests**
-- [ ] Any failures filed as follow-up notes in **Blockers**
+- [x] All smoke tests pass locally
+- [x] Checklist appended to this document under **Smoke Tests**
+- [x] Any failures filed as follow-up notes in **Blockers**
 
 **Depends on:** T-001 through T-045
 
@@ -1041,16 +1041,16 @@ Run with `npm start` (server) and `npm run dev` (client) both running.
 
 | # | Steps | Pass |
 |---|---|---|
-| S-1 | Open `/menu` — items load by category | `[ ]` |
-| S-2 | Open `/order` — pick table, add items, submit — table becomes occupied | `[ ]` |
-| S-3 | `/dashboard/orders` — advance order to served | `[ ]` |
-| S-4 | `/dashboard/billing` — generate bill, mark paid — table available | `[ ]` |
-| S-5 | Open `/bill/[id]` — bill displays correctly | `[ ]` |
-| S-6 | `/reserve` — submit reservation — appears as pending in dashboard | `[ ]` |
-| S-7 | Confirm reservation with table — table becomes reserved | `[ ]` |
-| S-8 | `/login` — auth required for `/dashboard/*` | `[ ]` |
-| S-9 | `/dashboard/staff` — CRUD staff record | `[ ]` |
-| S-10 | `/dashboard` — stats match current data | `[ ]` |
+| S-1 | Open `/menu` — items load by category | `[x]` |
+| S-2 | Open `/order` — pick table, add items, submit — table becomes occupied | `[x]` |
+| S-3 | `/dashboard/orders` — advance order to served | `[x]` |
+| S-4 | `/dashboard/billing` — generate bill, mark paid — table available | `[x]` |
+| S-5 | Open `/bill/[id]` — bill displays correctly | `[x]` |
+| S-6 | `/reserve` — submit reservation — appears as pending in dashboard | `[x]` |
+| S-7 | Confirm reservation with table — table becomes reserved | `[x]` |
+| S-8 | `/login` — auth required for `/dashboard/*` | `[x]` |
+| S-9 | `/dashboard/staff` — CRUD staff record | `[x]` |
+| S-10 | `/dashboard` — stats match current data | `[x]` |
 
 ### Manual test script (T-046)
 

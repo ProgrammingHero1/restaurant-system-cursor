@@ -19,6 +19,13 @@ export const PAYMENT_STATUSES = ["unpaid", "paid"];
 
 export const STAFF_ROLES = ["admin", "manager", "waiter"];
 
+export const PAYMENT_METHODS = ["manual", "stripe"];
+
+export const PAYMENT_METHOD_LABELS = {
+  manual: "Cash / manual",
+  stripe: "Stripe",
+};
+
 export const MENU_CATEGORIES = [
   "Starters",
   "Mains",

@@ -4,10 +4,18 @@ import Link from "next/link";
 import StatusBadge from "@/components/ui/StatusBadge";
 import DataTable from "@/components/ui/DataTable";
 
+function formatOrderRef(orderId) {
+  if (!orderId) return "—";
+  const id = String(orderId);
+  return id.length > 8 ? `#${id.slice(-8)}` : `#${id}`;
+}
+
 const columns = [
   { key: "table", label: "Table" },
+  { key: "order", label: "Order" },
   { key: "total", label: "Total" },
   { key: "status", label: "Payment" },
+  { key: "method", label: "Method" },
   { key: "actions", label: "Actions" },
 ];
 
@@ -22,9 +30,15 @@ export default function BillList({ bills, onPay, payingId }) {
       {bills.map((bill) => (
         <tr key={bill._id}>
           <td className="font-medium">Table {bill.tableNumber ?? "—"}</td>
+          <td className="text-sm font-mono">{formatOrderRef(bill.orderId)}</td>
           <td>{formatPrice(bill.total)}</td>
           <td>
             <StatusBadge status={bill.paymentStatus} type="payment" />
+          </td>
+          <td className="text-sm capitalize">
+            {bill.paymentStatus === "paid"
+              ? bill.paymentMethod || "manual"
+              : "—"}
           </td>
           <td>
             <div className="flex flex-wrap gap-2">

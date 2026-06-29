@@ -1,7 +1,22 @@
 import Link from "next/link";
 import HomeActionCards from "@/components/public/HomeActionCards";
+import FeaturedMenuItems from "@/components/public/FeaturedMenuItems";
+import { api } from "@/lib/api";
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  let featuredItems = [];
+
+  try {
+    const items = await api.get("/api/menu-items?available=true");
+    featuredItems = (Array.isArray(items) ? items : [])
+      .filter((item) => item.available !== false)
+      .slice(0, 3);
+  } catch {
+    featuredItems = [];
+  }
+
   return (
     <>
       <div className="hero bg-base-200 py-16 md:py-24">
@@ -26,6 +41,8 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      <FeaturedMenuItems items={featuredItems} />
 
       <HomeActionCards />
 
