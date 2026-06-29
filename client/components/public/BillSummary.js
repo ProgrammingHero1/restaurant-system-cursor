@@ -1,11 +1,12 @@
 import StatusBadge from "@/components/ui/StatusBadge";
+import BillPaymentSection from "@/components/public/BillPaymentSection";
 
 function formatPrice(value) {
   const n = Number(value);
   return Number.isNaN(n) ? "—" : `$${n.toFixed(2)}`;
 }
 
-export default function BillSummary({ bill }) {
+export default function BillSummary({ bill, paymentResult }) {
   return (
     <div className="max-w-lg mx-auto card bg-base-100 border border-base-300 shadow-sm">
       <div className="card-body">
@@ -63,13 +64,15 @@ export default function BillSummary({ bill }) {
           </div>
         </dl>
 
-        {bill.paymentStatus === "paid" ? (
-          <p className="text-success text-sm mt-4">This bill has been paid. Thank you!</p>
-        ) : (
-          <p className="text-base-content/70 text-sm mt-4">
-            Please pay at the counter when ready.
-          </p>
+        {bill.paymentStatus === "paid" && bill.paymentMethod === "stripe" && (
+          <p className="text-xs text-base-content/60 mt-2">Paid online via Stripe</p>
         )}
+
+        <BillPaymentSection
+          billId={bill._id}
+          initialPaymentStatus={bill.paymentStatus}
+          paymentResult={paymentResult}
+        />
       </div>
     </div>
   );

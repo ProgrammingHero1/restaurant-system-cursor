@@ -2,12 +2,19 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const Stripe = require('stripe');
 const { MongoClient, ObjectId } = require('mongodb');
 
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.DB_NAME || 'restaurant';
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY || '';
+const STRIPE_CURRENCY = (process.env.STRIPE_CURRENCY || 'usd').toLowerCase();
+
+const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
 
 const STAFF_ROLES = ['admin', 'manager', 'waiter'];
 const TABLE_STATUSES = ['available', 'occupied', 'reserved'];
@@ -25,6 +32,119 @@ const TAX_RATE = 0.08;
 const app = express();
 
 app.use(cors({ origin: CLIENT_URL }));
+
+function isStripeEnabled() {
+  return Boolean(stripe && STRIPE_SECRET_KEY);
+}
+
+async function markBillAsPaid(billId, options = {}) {
+  const {
+    paymentMethod = 'manual',
+    stripeCheckoutSessionId,
+    stripePaymentIntentId,
+  } = options;
+
+  const objectId = typeof billId === 'string' ? toObjectId(billId) : billId;
+  if (!objectId) {
+    throw new Error('Invalid bill id');
+  }
+
+  const billsCol = await getCollection('bills');
+  const bill = await billsCol.findOne({ _id: objectId });
+  if (!bill) {
+    const err = new Error('Bill not found');
+    err.status = 404;
+    throw err;
+  }
+  if (bill.paymentStatus === 'paid') {
+    return bill;
+  }
+
+  const paidAt = new Date();
+  const update = {
+    paymentStatus: 'paid',
+    paidAt,
+    updatedAt: paidAt,
+    paymentMethod,
+  };
+  if (stripeCheckoutSessionId) {
+    update.stripeCheckoutSessionId = stripeCheckoutSessionId;
+  }
+  if (stripePaymentIntentId) {
+    update.stripePaymentIntentId = stripePaymentIntentId;
+  }
+
+  const result = await billsCol.findOneAndUpdate(
+    { _id: objectId, paymentStatus: { $ne: 'paid' } },
+    { $set: update },
+    { returnDocument: 'after' }
+  );
+
+  if (!result) {
+    return billsCol.findOne({ _id: objectId });
+  }
+
+  const ordersCol = await getCollection('orders');
+  const order = await ordersCol.findOne({ _id: bill.orderId });
+  if (order) {
+    await ordersCol.updateOne(
+      { _id: bill.orderId },
+      { $set: { status: 'paid', updatedAt: paidAt } }
+    );
+    const tablesCol = await getCollection('tables');
+    await tablesCol.updateOne(
+      { _id: order.tableId },
+      { $set: { status: 'available', updatedAt: paidAt } }
+    );
+  }
+
+  return result;
+}
+
+app.post(
+  '/api/stripe/webhook',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    if (!stripe || !STRIPE_WEBHOOK_SECRET) {
+      return res.status(503).json({ error: 'Stripe webhooks are not configured' });
+    }
+
+    const signature = req.headers['stripe-signature'];
+    if (!signature) {
+      return res.status(400).json({ error: 'Missing Stripe signature' });
+    }
+
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(req.body, signature, STRIPE_WEBHOOK_SECRET);
+    } catch (err) {
+      console.error('Stripe webhook signature verification failed:', err.message);
+      return res.status(400).json({ error: 'Invalid webhook signature' });
+    }
+
+    try {
+      if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+        const billId = session.metadata?.billId;
+        if (billId) {
+          await markBillAsPaid(billId, {
+            paymentMethod: 'stripe',
+            stripeCheckoutSessionId: session.id,
+            stripePaymentIntentId:
+              typeof session.payment_intent === 'string'
+                ? session.payment_intent
+                : session.payment_intent?.id,
+          });
+        }
+      }
+      res.json({ received: true });
+    } catch (err) {
+      console.error('Stripe webhook handler failed:', err.message);
+      res.status(500).json({ error: 'Webhook handler failed' });
+    }
+  }
+);
+
 app.use(express.json());
 
 let client = null;
@@ -83,6 +203,7 @@ async function ensureIndexes() {
     const bills = await getCollection('bills');
     await bills.createIndex({ orderId: 1 }, { unique: true });
     await bills.createIndex({ paymentStatus: 1 });
+    await bills.createIndex({ stripeCheckoutSessionId: 1 }, { sparse: true });
   } catch (err) {
     console.warn('Index setup warning:', err.message);
   }
@@ -133,12 +254,16 @@ async function requireAdmin(req, res, next) {
 function isPublicWriteRoute(req) {
   if (req.method === 'POST' && req.path === '/api/orders') return true;
   if (req.method === 'POST' && req.path === '/api/reservations') return true;
+  if (req.method === 'POST' && /^\/api\/bills\/[^/]+\/checkout-session$/.test(req.path)) {
+    return true;
+  }
   return false;
 }
 
 function isPublicReadRoute(req) {
   if (req.method !== 'GET') return false;
   if (req.path === '/api/health') return true;
+  if (req.path === '/api/payments/config') return true;
   if (req.path === '/api/menu-items') return true;
   if (req.path === '/api/tables/available') return true;
   if (/^\/api\/bills\/[^/]+$/.test(req.path)) return true;
@@ -148,6 +273,7 @@ function isPublicReadRoute(req) {
 app.use((req, res, next) => {
   if (!req.path.startsWith('/api/')) return next();
   if (req.path === '/api/health') return next();
+  if (req.path === '/api/stripe/webhook') return next();
   if (isPublicReadRoute(req) || isPublicWriteRoute(req)) return next();
 
   if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method)) {
@@ -674,6 +800,10 @@ app.patch('/api/orders/:id/status', requireAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Generate a bill to mark order as billed' });
     }
 
+    if (order.status === 'billed' && nextStatus === 'paid') {
+      return res.status(400).json({ error: 'Mark the bill as paid to complete payment' });
+    }
+
     const result = await ordersCol.findOneAndUpdate(
       { _id: objectId },
       { $set: { status: nextStatus, updatedAt: new Date() } },
@@ -942,6 +1072,7 @@ app.post('/api/bills', requireAdmin, async (req, res) => {
       tax,
       total,
       paymentStatus: 'unpaid',
+      paymentMethod: null,
       createdAt: new Date(),
     };
 
@@ -968,6 +1099,27 @@ app.patch('/api/bills/:id/pay', requireAdmin, async (req, res) => {
   }
 
   try {
+    const result = await markBillAsPaid(objectId, { paymentMethod: 'manual' });
+    res.json(result);
+  } catch (err) {
+    if (err.status === 404) {
+      return res.status(404).json({ error: 'Bill not found' });
+    }
+    res.status(500).json({ error: 'Failed to mark bill as paid' });
+  }
+});
+
+app.post('/api/bills/:id/checkout-session', async (req, res) => {
+  if (!isStripeEnabled()) {
+    return res.status(503).json({ error: 'Stripe payments are not configured' });
+  }
+
+  const objectId = toObjectId(req.params.id);
+  if (!objectId) {
+    return res.status(400).json({ error: 'Invalid bill id' });
+  }
+
+  try {
     const billsCol = await getCollection('bills');
     const bill = await billsCol.findOne({ _id: objectId });
     if (!bill) {
@@ -977,31 +1129,57 @@ app.patch('/api/bills/:id/pay', requireAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Bill is already paid' });
     }
 
-    const paidAt = new Date();
-    const result = await billsCol.findOneAndUpdate(
-      { _id: objectId },
-      { $set: { paymentStatus: 'paid', paidAt, updatedAt: paidAt } },
-      { returnDocument: 'after' }
-    );
-
-    const ordersCol = await getCollection('orders');
-    const order = await ordersCol.findOne({ _id: bill.orderId });
-    if (order) {
-      await ordersCol.updateOne(
-        { _id: bill.orderId },
-        { $set: { status: 'paid', updatedAt: paidAt } }
-      );
-      const tablesCol = await getCollection('tables');
-      await tablesCol.updateOne(
-        { _id: order.tableId },
-        { $set: { status: 'available', updatedAt: paidAt } }
-      );
+    const amountCents = Math.round(Number(bill.total) * 100);
+    if (!Number.isFinite(amountCents) || amountCents < 50) {
+      return res.status(400).json({ error: 'Bill total is too low for card payment' });
     }
 
-    res.json(result);
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: STRIPE_CURRENCY,
+            product_data: {
+              name: `Table ${bill.tableNumber ?? '—'} restaurant bill`,
+              description: 'Restaurant dine-in bill',
+            },
+            unit_amount: amountCents,
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        billId: String(bill._id),
+      },
+      success_url: `${CLIENT_URL}/bill/${bill._id}?payment=success`,
+      cancel_url: `${CLIENT_URL}/bill/${bill._id}?payment=canceled`,
+    });
+
+    await billsCol.updateOne(
+      { _id: objectId },
+      {
+        $set: {
+          stripeCheckoutSessionId: session.id,
+          updatedAt: new Date(),
+        },
+      }
+    );
+
+    res.json({ url: session.url, sessionId: session.id });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to mark bill as paid' });
+    console.error('Stripe checkout session failed:', err.message);
+    res.status(500).json({ error: 'Failed to create checkout session' });
   }
+});
+
+app.get('/api/payments/config', (req, res) => {
+  res.json({
+    stripeEnabled: isStripeEnabled(),
+    publishableKey: STRIPE_PUBLISHABLE_KEY || null,
+    currency: STRIPE_CURRENCY,
+  });
 });
 
 // --- Dashboard stats ---
@@ -1026,7 +1204,7 @@ app.get('/api/dashboard/stats', requireAdmin, async (req, res) => {
         billsCol
           .find({
             paymentStatus: 'paid',
-            paidAt: { $gte: dayStart, $lt: dayEnd },
+            createdAt: { $gte: dayStart, $lt: dayEnd },
           })
           .toArray(),
       ]);
