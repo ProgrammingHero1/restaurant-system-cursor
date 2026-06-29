@@ -10,6 +10,17 @@ const DB_NAME = process.env.DB_NAME || 'restaurant';
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 
 const STAFF_ROLES = ['admin', 'manager', 'waiter'];
+const TABLE_STATUSES = ['available', 'occupied', 'reserved'];
+const ORDER_STATUSES = ['pending', 'preparing', 'served', 'billed', 'paid'];
+const ORDER_STATUS_TRANSITIONS = {
+  pending: 'preparing',
+  preparing: 'served',
+  served: 'billed',
+  billed: 'paid',
+};
+const RESERVATION_STATUSES = ['pending', 'confirmed', 'seated', 'cancelled'];
+const PAYMENT_STATUSES = ['unpaid', 'paid'];
+const TAX_RATE = 0.08;
 
 const app = express();
 
@@ -59,9 +70,34 @@ async function ensureIndexes() {
     const menuItems = await getCollection('menuItems');
     await menuItems.createIndex({ category: 1 });
     await menuItems.createIndex({ available: 1 });
+
+    const tables = await getCollection('tables');
+    await tables.createIndex({ number: 1 }, { unique: true });
+
+    const orders = await getCollection('orders');
+    await orders.createIndex({ status: 1, createdAt: -1 });
+
+    const reservations = await getCollection('reservations');
+    await reservations.createIndex({ dateTime: 1, status: 1 });
+
+    const bills = await getCollection('bills');
+    await bills.createIndex({ orderId: 1 }, { unique: true });
+    await bills.createIndex({ paymentStatus: 1 });
   } catch (err) {
     console.warn('Index setup warning:', err.message);
   }
+}
+
+function startOfToday() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function endOfToday() {
+  const d = startOfToday();
+  d.setDate(d.getDate() + 1);
+  return d;
 }
 
 async function requireAdmin(req, res, next) {
@@ -409,6 +445,602 @@ app.delete('/api/menu-items/:id', requireAdmin, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete menu item' });
+  }
+});
+
+// --- Tables ---
+
+app.get('/api/tables', requireAdmin, async (req, res) => {
+  try {
+    const col = await getCollection('tables');
+    const list = await col.find({}).sort({ number: 1 }).toArray();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch tables' });
+  }
+});
+
+app.get('/api/tables/available', async (req, res) => {
+  try {
+    const col = await getCollection('tables');
+    const list = await col
+      .find({ status: 'available' })
+      .sort({ number: 1 })
+      .toArray();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch available tables' });
+  }
+});
+
+app.post('/api/tables', requireAdmin, async (req, res) => {
+  const { number, capacity } = req.body;
+
+  if (number === undefined || number === null || number === '') {
+    return res.status(400).json({ error: 'Table number is required' });
+  }
+  const tableNumber = Number(number);
+  if (Number.isNaN(tableNumber) || tableNumber < 1) {
+    return res.status(400).json({ error: 'Table number must be a positive number' });
+  }
+  const cap = Number(capacity);
+  if (Number.isNaN(cap) || cap < 1) {
+    return res.status(400).json({ error: 'Capacity must be at least 1' });
+  }
+
+  try {
+    const col = await getCollection('tables');
+    const doc = {
+      number: tableNumber,
+      capacity: cap,
+      status: 'available',
+      createdAt: new Date(),
+    };
+    const result = await col.insertOne(doc);
+    res.status(201).json({ ...doc, _id: result.insertedId });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ error: 'Table number already exists' });
+    }
+    res.status(500).json({ error: 'Failed to create table' });
+  }
+});
+
+app.patch('/api/tables/:id', requireAdmin, async (req, res) => {
+  const objectId = toObjectId(req.params.id);
+  if (!objectId) {
+    return res.status(400).json({ error: 'Invalid table id' });
+  }
+
+  const updates = {};
+  const { number, capacity, status } = req.body;
+
+  if (number !== undefined) {
+    const tableNumber = Number(number);
+    if (Number.isNaN(tableNumber) || tableNumber < 1) {
+      return res.status(400).json({ error: 'Table number must be a positive number' });
+    }
+    updates.number = tableNumber;
+  }
+  if (capacity !== undefined) {
+    const cap = Number(capacity);
+    if (Number.isNaN(cap) || cap < 1) {
+      return res.status(400).json({ error: 'Capacity must be at least 1' });
+    }
+    updates.capacity = cap;
+  }
+  if (status !== undefined) {
+    if (!TABLE_STATUSES.includes(status)) {
+      return res.status(400).json({ error: 'Invalid table status' });
+    }
+    updates.status = status;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: 'No valid fields to update' });
+  }
+
+  updates.updatedAt = new Date();
+
+  try {
+    const col = await getCollection('tables');
+    const result = await col.findOneAndUpdate(
+      { _id: objectId },
+      { $set: updates },
+      { returnDocument: 'after' }
+    );
+
+    if (!result) {
+      return res.status(404).json({ error: 'Table not found' });
+    }
+
+    res.json(result);
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ error: 'Table number already exists' });
+    }
+    res.status(500).json({ error: 'Failed to update table' });
+  }
+});
+
+// --- Orders ---
+
+app.get('/api/orders', requireAdmin, async (req, res) => {
+  try {
+    const col = await getCollection('orders');
+    const filter = {};
+    if (req.query.status && ORDER_STATUSES.includes(req.query.status)) {
+      filter.status = req.query.status;
+    }
+    const list = await col.find(filter).sort({ createdAt: -1 }).toArray();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+});
+
+app.post('/api/orders', async (req, res) => {
+  const { tableId, items, customerName, notes } = req.body;
+
+  if (!tableId) {
+    return res.status(400).json({ error: 'Table is required' });
+  }
+  const tableObjectId = toObjectId(tableId);
+  if (!tableObjectId) {
+    return res.status(400).json({ error: 'Invalid table id' });
+  }
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'Order must include at least one item' });
+  }
+
+  try {
+    const tablesCol = await getCollection('tables');
+    const table = await tablesCol.findOne({ _id: tableObjectId });
+    if (!table) {
+      return res.status(400).json({ error: 'Table not found' });
+    }
+    if (table.status !== 'available') {
+      return res.status(400).json({ error: 'Table is not available' });
+    }
+
+    const menuCol = await getCollection('menuItems');
+    const lineItems = [];
+    let subtotal = 0;
+
+    for (const entry of items) {
+      const menuItemId = toObjectId(entry.menuItemId);
+      const qty = Number(entry.qty);
+      if (!menuItemId || Number.isNaN(qty) || qty < 1) {
+        return res.status(400).json({ error: 'Invalid order item' });
+      }
+      const menuItem = await menuCol.findOne({ _id: menuItemId });
+      if (!menuItem || !menuItem.available) {
+        return res.status(400).json({ error: `Menu item unavailable: ${entry.menuItemId}` });
+      }
+      const lineTotal = menuItem.price * qty;
+      lineItems.push({
+        menuItemId,
+        name: menuItem.name,
+        qty,
+        price: menuItem.price,
+        lineTotal,
+      });
+      subtotal += lineTotal;
+    }
+
+    const ordersCol = await getCollection('orders');
+    const doc = {
+      tableId: tableObjectId,
+      tableNumber: table.number,
+      items: lineItems,
+      status: 'pending',
+      subtotal,
+      customerName: customerName ? String(customerName).trim() : '',
+      notes: notes ? String(notes).trim() : '',
+      createdAt: new Date(),
+    };
+    const result = await ordersCol.insertOne(doc);
+
+    await tablesCol.updateOne(
+      { _id: tableObjectId },
+      { $set: { status: 'occupied', updatedAt: new Date() } }
+    );
+
+    res.status(201).json({ ...doc, _id: result.insertedId });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create order' });
+  }
+});
+
+app.patch('/api/orders/:id/status', requireAdmin, async (req, res) => {
+  const objectId = toObjectId(req.params.id);
+  if (!objectId) {
+    return res.status(400).json({ error: 'Invalid order id' });
+  }
+
+  try {
+    const ordersCol = await getCollection('orders');
+    const order = await ordersCol.findOne({ _id: objectId });
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const nextStatus = ORDER_STATUS_TRANSITIONS[order.status];
+    if (!nextStatus) {
+      return res.status(400).json({ error: 'Order cannot be advanced further' });
+    }
+
+    if (order.status === 'served' && nextStatus === 'billed') {
+      return res.status(400).json({ error: 'Generate a bill to mark order as billed' });
+    }
+
+    const result = await ordersCol.findOneAndUpdate(
+      { _id: objectId },
+      { $set: { status: nextStatus, updatedAt: new Date() } },
+      { returnDocument: 'after' }
+    );
+
+    if (nextStatus === 'paid') {
+      const tablesCol = await getCollection('tables');
+      await tablesCol.updateOne(
+        { _id: order.tableId },
+        { $set: { status: 'available', updatedAt: new Date() } }
+      );
+    }
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update order status' });
+  }
+});
+
+app.patch('/api/orders/:id', requireAdmin, async (req, res) => {
+  const objectId = toObjectId(req.params.id);
+  if (!objectId) {
+    return res.status(400).json({ error: 'Invalid order id' });
+  }
+
+  const updates = {};
+  const { customerName, notes } = req.body;
+
+  if (customerName !== undefined) {
+    updates.customerName = String(customerName).trim();
+  }
+  if (notes !== undefined) {
+    updates.notes = String(notes).trim();
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: 'No valid fields to update' });
+  }
+
+  updates.updatedAt = new Date();
+
+  try {
+    const col = await getCollection('orders');
+    const result = await col.findOneAndUpdate(
+      { _id: objectId },
+      { $set: updates },
+      { returnDocument: 'after' }
+    );
+
+    if (!result) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update order' });
+  }
+});
+
+// --- Reservations ---
+
+app.get('/api/reservations', requireAdmin, async (req, res) => {
+  try {
+    const col = await getCollection('reservations');
+    const filter = {};
+
+    if (req.query.status && RESERVATION_STATUSES.includes(req.query.status)) {
+      filter.status = req.query.status;
+    }
+
+    if (req.query.date) {
+      const dayStart = new Date(`${req.query.date}T00:00:00`);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setDate(dayEnd.getDate() + 1);
+      if (!Number.isNaN(dayStart.getTime())) {
+        filter.dateTime = { $gte: dayStart, $lt: dayEnd };
+      }
+    }
+
+    const list = await col.find(filter).sort({ dateTime: 1 }).toArray();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch reservations' });
+  }
+});
+
+app.post('/api/reservations', async (req, res) => {
+  const { customerName, phone, partySize, dateTime, notes } = req.body;
+
+  if (!customerName || !String(customerName).trim()) {
+    return res.status(400).json({ error: 'Customer name is required' });
+  }
+  if (!phone || !String(phone).trim()) {
+    return res.status(400).json({ error: 'Phone is required' });
+  }
+  const size = Number(partySize);
+  if (Number.isNaN(size) || size < 1) {
+    return res.status(400).json({ error: 'Party size must be at least 1' });
+  }
+  if (!dateTime) {
+    return res.status(400).json({ error: 'Date and time are required' });
+  }
+  const when = new Date(dateTime);
+  if (Number.isNaN(when.getTime())) {
+    return res.status(400).json({ error: 'Invalid date and time' });
+  }
+
+  try {
+    const col = await getCollection('reservations');
+    const doc = {
+      customerName: String(customerName).trim(),
+      phone: String(phone).trim(),
+      partySize: size,
+      dateTime: when,
+      status: 'pending',
+      notes: notes ? String(notes).trim() : '',
+      createdAt: new Date(),
+    };
+    const result = await col.insertOne(doc);
+    res.status(201).json({ ...doc, _id: result.insertedId });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create reservation' });
+  }
+});
+
+app.patch('/api/reservations/:id', requireAdmin, async (req, res) => {
+  const objectId = toObjectId(req.params.id);
+  if (!objectId) {
+    return res.status(400).json({ error: 'Invalid reservation id' });
+  }
+
+  const { status, tableId } = req.body;
+
+  try {
+    const reservationsCol = await getCollection('reservations');
+    const reservation = await reservationsCol.findOne({ _id: objectId });
+    if (!reservation) {
+      return res.status(404).json({ error: 'Reservation not found' });
+    }
+
+    const tablesCol = await getCollection('tables');
+    const updates = { updatedAt: new Date() };
+
+    if (status === 'confirmed') {
+      const tableObjectId = toObjectId(tableId);
+      if (!tableObjectId) {
+        return res.status(400).json({ error: 'Table is required to confirm' });
+      }
+      const table = await tablesCol.findOne({ _id: tableObjectId });
+      if (!table) {
+        return res.status(400).json({ error: 'Table not found' });
+      }
+      if (table.status !== 'available') {
+        return res.status(400).json({ error: 'Table is not available' });
+      }
+      if (reservation.partySize > table.capacity) {
+        return res.status(400).json({ error: 'Party size exceeds table capacity' });
+      }
+      updates.status = 'confirmed';
+      updates.tableId = tableObjectId;
+      await tablesCol.updateOne(
+        { _id: tableObjectId },
+        { $set: { status: 'reserved', updatedAt: new Date() } }
+      );
+    } else if (status === 'cancelled') {
+      updates.status = 'cancelled';
+      if (reservation.tableId && reservation.status === 'confirmed') {
+        await tablesCol.updateOne(
+          { _id: reservation.tableId },
+          { $set: { status: 'available', updatedAt: new Date() } }
+        );
+      }
+    } else if (status === 'seated') {
+      if (reservation.status !== 'confirmed') {
+        return res.status(400).json({ error: 'Only confirmed reservations can be seated' });
+      }
+      updates.status = 'seated';
+    } else if (status !== undefined) {
+      return res.status(400).json({ error: 'Invalid reservation status update' });
+    }
+
+    if (Object.keys(updates).length === 1) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+
+    const result = await reservationsCol.findOneAndUpdate(
+      { _id: objectId },
+      { $set: updates },
+      { returnDocument: 'after' }
+    );
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update reservation' });
+  }
+});
+
+// --- Bills ---
+
+app.get('/api/bills', requireAdmin, async (req, res) => {
+  try {
+    const col = await getCollection('bills');
+    const filter = {};
+    if (req.query.paymentStatus && PAYMENT_STATUSES.includes(req.query.paymentStatus)) {
+      filter.paymentStatus = req.query.paymentStatus;
+    }
+    const list = await col.find(filter).sort({ createdAt: -1 }).toArray();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch bills' });
+  }
+});
+
+app.get('/api/bills/:id', async (req, res) => {
+  const objectId = toObjectId(req.params.id);
+  if (!objectId) {
+    return res.status(400).json({ error: 'Invalid bill id' });
+  }
+
+  try {
+    const col = await getCollection('bills');
+    const bill = await col.findOne({ _id: objectId });
+    if (!bill) {
+      return res.status(404).json({ error: 'Bill not found' });
+    }
+    res.json(bill);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch bill' });
+  }
+});
+
+app.post('/api/bills', requireAdmin, async (req, res) => {
+  const { orderId } = req.body;
+  const orderObjectId = toObjectId(orderId);
+  if (!orderObjectId) {
+    return res.status(400).json({ error: 'Valid order id is required' });
+  }
+
+  try {
+    const ordersCol = await getCollection('orders');
+    const order = await ordersCol.findOne({ _id: orderObjectId });
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    if (order.status !== 'served') {
+      return res.status(400).json({ error: 'Bill can only be created for served orders' });
+    }
+
+    const billsCol = await getCollection('bills');
+    const existing = await billsCol.findOne({ orderId: orderObjectId });
+    if (existing) {
+      return res.status(400).json({ error: 'Bill already exists for this order' });
+    }
+
+    const subtotal = order.subtotal;
+    const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+    const total = Math.round((subtotal + tax) * 100) / 100;
+
+    const doc = {
+      orderId: orderObjectId,
+      tableNumber: order.tableNumber,
+      lineItems: order.items,
+      subtotal,
+      taxRate: TAX_RATE,
+      tax,
+      total,
+      paymentStatus: 'unpaid',
+      createdAt: new Date(),
+    };
+
+    const result = await billsCol.insertOne(doc);
+
+    await ordersCol.updateOne(
+      { _id: orderObjectId },
+      { $set: { status: 'billed', updatedAt: new Date() } }
+    );
+
+    res.status(201).json({ ...doc, _id: result.insertedId });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ error: 'Bill already exists for this order' });
+    }
+    res.status(500).json({ error: 'Failed to create bill' });
+  }
+});
+
+app.patch('/api/bills/:id/pay', requireAdmin, async (req, res) => {
+  const objectId = toObjectId(req.params.id);
+  if (!objectId) {
+    return res.status(400).json({ error: 'Invalid bill id' });
+  }
+
+  try {
+    const billsCol = await getCollection('bills');
+    const bill = await billsCol.findOne({ _id: objectId });
+    if (!bill) {
+      return res.status(404).json({ error: 'Bill not found' });
+    }
+    if (bill.paymentStatus === 'paid') {
+      return res.status(400).json({ error: 'Bill is already paid' });
+    }
+
+    const paidAt = new Date();
+    const result = await billsCol.findOneAndUpdate(
+      { _id: objectId },
+      { $set: { paymentStatus: 'paid', paidAt, updatedAt: paidAt } },
+      { returnDocument: 'after' }
+    );
+
+    const ordersCol = await getCollection('orders');
+    const order = await ordersCol.findOne({ _id: bill.orderId });
+    if (order) {
+      await ordersCol.updateOne(
+        { _id: bill.orderId },
+        { $set: { status: 'paid', updatedAt: paidAt } }
+      );
+      const tablesCol = await getCollection('tables');
+      await tablesCol.updateOne(
+        { _id: order.tableId },
+        { $set: { status: 'available', updatedAt: paidAt } }
+      );
+    }
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to mark bill as paid' });
+  }
+});
+
+// --- Dashboard stats ---
+
+app.get('/api/dashboard/stats', requireAdmin, async (req, res) => {
+  try {
+    const dayStart = startOfToday();
+    const dayEnd = endOfToday();
+
+    const ordersCol = await getCollection('orders');
+    const reservationsCol = await getCollection('reservations');
+    const billsCol = await getCollection('bills');
+
+    const [openOrdersCount, todayReservationsCount, unpaidBillsCount, paidToday] =
+      await Promise.all([
+        ordersCol.countDocuments({ status: { $nin: ['paid'] } }),
+        reservationsCol.countDocuments({
+          dateTime: { $gte: dayStart, $lt: dayEnd },
+          status: { $ne: 'cancelled' },
+        }),
+        billsCol.countDocuments({ paymentStatus: 'unpaid' }),
+        billsCol
+          .find({
+            paymentStatus: 'paid',
+            paidAt: { $gte: dayStart, $lt: dayEnd },
+          })
+          .toArray(),
+      ]);
+
+    const todayRevenue = paidToday.reduce((sum, b) => sum + (b.total || 0), 0);
+
+    res.json({
+      openOrdersCount,
+      todayReservationsCount,
+      unpaidBillsCount,
+      todayRevenue: Math.round(todayRevenue * 100) / 100,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch dashboard stats' });
   }
 });
 
