@@ -55,6 +55,10 @@ async function ensureIndexes() {
   try {
     const staff = await getCollection('staff');
     await staff.createIndex({ email: 1 }, { unique: true });
+
+    const menuItems = await getCollection('menuItems');
+    await menuItems.createIndex({ category: 1 });
+    await menuItems.createIndex({ available: 1 });
   } catch (err) {
     console.warn('Index setup warning:', err.message);
   }
@@ -251,6 +255,160 @@ app.patch('/api/staff/:id', requireAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Email already exists' });
     }
     res.status(500).json({ error: 'Failed to update staff member' });
+  }
+});
+
+function parseMenuPrice(value) {
+  if (value === undefined || value === null || value === '') {
+    return { error: 'Price is required' };
+  }
+  const price = Number(value);
+  if (Number.isNaN(price)) {
+    return { error: 'Price must be a number' };
+  }
+  if (price < 0) {
+    return { error: 'Price cannot be negative' };
+  }
+  return { price };
+}
+
+function validateMenuItemCreate(body) {
+  const { name, description, price, category, available } = body;
+
+  if (!name || !String(name).trim()) {
+    return { error: 'Name is required' };
+  }
+
+  const priceResult = parseMenuPrice(price);
+  if (priceResult.error) {
+    return { error: priceResult.error };
+  }
+
+  if (!category || !String(category).trim()) {
+    return { error: 'Category is required' };
+  }
+
+  return {
+    doc: {
+      name: String(name).trim(),
+      description: description ? String(description).trim() : '',
+      price: priceResult.price,
+      category: String(category).trim(),
+      available: available !== false,
+      createdAt: new Date(),
+    },
+  };
+}
+
+app.get('/api/menu-items', async (req, res) => {
+  try {
+    const col = await getCollection('menuItems');
+    const filter = {};
+
+    if (req.query.available === 'true') {
+      filter.available = true;
+    } else if (req.query.available === 'false') {
+      filter.available = false;
+    }
+
+    const list = await col.find(filter).sort({ category: 1, name: 1 }).toArray();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch menu items' });
+  }
+});
+
+app.post('/api/menu-items', requireAdmin, async (req, res) => {
+  const validation = validateMenuItemCreate(req.body);
+  if (validation.error) {
+    return res.status(400).json({ error: validation.error });
+  }
+
+  try {
+    const col = await getCollection('menuItems');
+    const result = await col.insertOne(validation.doc);
+    res.status(201).json({ ...validation.doc, _id: result.insertedId });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create menu item' });
+  }
+});
+
+app.patch('/api/menu-items/:id', requireAdmin, async (req, res) => {
+  const objectId = toObjectId(req.params.id);
+  if (!objectId) {
+    return res.status(400).json({ error: 'Invalid menu item id' });
+  }
+
+  const updates = {};
+  const { name, description, price, category, available } = req.body;
+
+  if (name !== undefined) {
+    if (!String(name).trim()) {
+      return res.status(400).json({ error: 'Name cannot be empty' });
+    }
+    updates.name = String(name).trim();
+  }
+  if (description !== undefined) {
+    updates.description = String(description).trim();
+  }
+  if (price !== undefined) {
+    const priceResult = parseMenuPrice(price);
+    if (priceResult.error) {
+      return res.status(400).json({ error: priceResult.error });
+    }
+    updates.price = priceResult.price;
+  }
+  if (category !== undefined) {
+    if (!String(category).trim()) {
+      return res.status(400).json({ error: 'Category cannot be empty' });
+    }
+    updates.category = String(category).trim();
+  }
+  if (available !== undefined) {
+    updates.available = Boolean(available);
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: 'No valid fields to update' });
+  }
+
+  updates.updatedAt = new Date();
+
+  try {
+    const col = await getCollection('menuItems');
+    const result = await col.findOneAndUpdate(
+      { _id: objectId },
+      { $set: updates },
+      { returnDocument: 'after' }
+    );
+
+    if (!result) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update menu item' });
+  }
+});
+
+app.delete('/api/menu-items/:id', requireAdmin, async (req, res) => {
+  const objectId = toObjectId(req.params.id);
+  if (!objectId) {
+    return res.status(400).json({ error: 'Invalid menu item id' });
+  }
+
+  try {
+    const col = await getCollection('menuItems');
+    const result = await col.deleteOne({ _id: objectId });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete menu item' });
   }
 });
 

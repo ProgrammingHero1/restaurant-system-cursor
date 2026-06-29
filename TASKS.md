@@ -11,12 +11,12 @@ Master task list for building the MVP. Reference docs: [`architecture.MD`](archi
 | Status | Count |
 |---|---|
 | Total tasks | 46 |
-| Done `[x]` | 19 |
+| Done `[x]` | 22 |
 | In progress `[~]` | 0 |
-| Not started `[ ]` | 27 |
-| **Batches complete** | **3 / 10** (Batch 10 partial: 1/4) |
+| Not started `[ ]` | 24 |
+| **Batches complete** | **3 / 10** (Batch 3: 3/4; Batch 10 partial: 1/4) |
 
-**Last updated:** 2026-06-28 (T-043, T-039, T-040 complete)
+**Last updated:** 2026-06-28 (T-020 complete)
 
 ---
 
@@ -28,7 +28,7 @@ Recommended execution order. Run batches sequentially — each batch depends on 
 |---|---|---|---|---|---|
 | **1** | Foundation | T-001 – T-007 | 7 / 7 | `[x]` **Done** | — |
 | **2** | Auth + UI shells | T-008 – T-016 | 9 / 9 | `[x]` **Done** | Batch 1 |
-| **3** | Menu | T-017 – T-020 | 0 / 4 | `[ ]` Not started | Batch 2 |
+| **3** | Menu | T-017 – T-020 | 3 / 4 | `[~]` In progress | Batch 2 |
 | **4** | Tables | T-021 – T-024 | 0 / 4 | `[ ]` Not started | Batch 3 |
 | **5** | Orders | T-025 – T-029 | 0 / 5 | `[ ]` Not started | Batch 4 |
 | **6** | Reservations | T-030 – T-033 | 0 / 4 | `[ ]` Not started | Batch 5 |
@@ -153,7 +153,7 @@ flowchart TD
   B9 --> B10
 ```
 
-**Recommended next step:** `Execute Batch 3` (T-017 through T-020)
+**Recommended next step:** `Execute T-019` (completes Batch 3)
 
 ---
 
@@ -177,10 +177,10 @@ flowchart TD
 | T-014 | Shared UI components | `[x]` |
 | T-015 | Public layout + navbar | `[x]` |
 | T-016 | Dashboard sidebar + shell | `[x]` |
-| T-017 | Menu API (CRUD) | `[ ]` |
-| T-018 | Menu indexes on startup | `[ ]` |
+| T-017 | Menu API (CRUD) | `[x]` |
+| T-018 | Menu indexes on startup | `[x]` |
 | T-019 | Admin menu page | `[ ]` |
-| T-020 | Customer menu page | `[ ]` |
+| T-020 | Customer menu page | `[x]` |
 | T-021 | Tables API | `[ ]` |
 | T-022 | Tables indexes on startup | `[ ]` |
 | T-023 | Admin tables page | `[ ]` |
@@ -489,31 +489,31 @@ flowchart TD
 
 ### US-A03: As a manager, I want to manage menu items so the catalog stays up to date
 
-#### T-017 — Menu API (CRUD) `[ ]`
+#### T-017 — Menu API (CRUD) `[x]`
 
 **Sub-tasks**
-- [ ] `GET /api/menu-items` — public, list all (optional filter `?available=true`)
-- [ ] `POST /api/menu-items` — admin, create item
-- [ ] `PATCH /api/menu-items/:id` — admin, update item
-- [ ] `DELETE /api/menu-items/:id` — admin, delete item
-- [ ] Validate required fields: name, price, category; reject negative price
+- [x] `GET /api/menu-items` — public, list all (optional filter `?available=true`)
+- [x] `POST /api/menu-items` — admin, create item
+- [x] `PATCH /api/menu-items/:id` — admin, update item
+- [x] `DELETE /api/menu-items/:id` — admin, delete item
+- [x] Validate required fields: name, price, category; reject negative price
 
 **Acceptance criteria**
-- [ ] CRUD works via curl or API client
-- [ ] Invalid body returns 400 with `{ error: "..." }`
-- [ ] Admin routes require auth (T-013)
+- [x] CRUD works via curl or API client
+- [x] Invalid body returns 400 with `{ error: "..." }`
+- [x] Admin routes require auth (T-013)
 
 **Depends on:** T-002, T-013
 
 ---
 
-#### T-018 — Menu indexes on startup `[ ]`
+#### T-018 — Menu indexes on startup `[x]`
 
 **Sub-tasks**
-- [ ] Create indexes on `menuItems`: `{ category: 1 }`, `{ available: 1 }`
+- [x] Create indexes on `menuItems`: `{ category: 1 }`, `{ available: 1 }`
 
 **Acceptance criteria**
-- [ ] Indexes created idempotently on server start (ignore if exists)
+- [x] Indexes created idempotently on server start (ignore if exists)
 
 **Depends on:** T-017
 
@@ -535,19 +535,19 @@ flowchart TD
 
 ---
 
-#### T-020 — Customer menu page `[ ]`
+#### T-020 — Customer menu page `[x]`
 
 **Sub-tasks**
-- [ ] Build `/menu` grouped by category
-- [ ] Create `components/public/MenuCard.js` and `MenuCategorySection.js`
-- [ ] Hide or grey out unavailable items
-- [ ] Link to `/order`
+- [x] Build `/menu` grouped by category
+- [x] Create `components/public/MenuCard.js` and `MenuCategorySection.js`
+- [x] Hide or grey out unavailable items
+- [x] Link to `/order`
 
 **Acceptance criteria**
-- [ ] Items grouped by category from API
-- [ ] Prices and descriptions display correctly
-- [ ] "Order now" navigates to `/order`
-- [ ] Page works on mobile
+- [x] Items grouped by category from API
+- [x] Prices and descriptions display correctly
+- [x] "Order now" navigates to `/order`
+- [x] Page works on mobile
 
 **Depends on:** T-015, T-017
 
